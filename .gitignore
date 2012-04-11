@@ -1,0 +1,11 @@
+bin/
+gen/
+*.apk
+classes/
+out/
+.DS_Store
+.idea/
+*.iml
+*.iws
+*.eml
+*.ipr
