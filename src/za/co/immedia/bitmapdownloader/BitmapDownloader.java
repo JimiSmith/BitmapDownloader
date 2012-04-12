@@ -148,12 +148,12 @@ public class BitmapDownloader {
 
 		private boolean isBeingDownloaded() {
 			for (Download download : mRunningDownloads) {
-				if(download == null) {
+				if (download == null) {
 					continue;
 				}
 				ImageView otherImageView = download.getImageView();
 				ImageView thisImageView = getImageView();
-				if(thisImageView == null || otherImageView == null) {
+				if (thisImageView == null || otherImageView == null) {
 					continue;
 				}
 				if (otherImageView.equals(thisImageView) && download.getUrl().equals(mUrl)) {
@@ -165,12 +165,12 @@ public class BitmapDownloader {
 
 		private int indexOfDownloadWithDifferentURL() {
 			for (Download download : mRunningDownloads) {
-				if(download == null) {
+				if (download == null) {
 					continue;
 				}
 				ImageView otherImageView = download.getImageView();
 				ImageView thisImageView = getImageView();
-				if(thisImageView == null || otherImageView == null) {
+				if (thisImageView == null || otherImageView == null) {
 					continue;
 				}
 				if (otherImageView.equals(thisImageView) && !download.getUrl().equals(mUrl)) {
@@ -182,12 +182,12 @@ public class BitmapDownloader {
 
 		private boolean isQueuedForDownload() {
 			for (Download download : mQueuedDownloads) {
-				if(download == null) {
+				if (download == null) {
 					continue;
 				}
 				ImageView otherImageView = download.getImageView();
 				ImageView thisImageView = getImageView();
-				if(thisImageView == null || otherImageView == null) {
+				if (thisImageView == null || otherImageView == null) {
 					continue;
 				}
 				if (otherImageView.equals(thisImageView) && download.getUrl().equals(mUrl)) {
@@ -199,12 +199,12 @@ public class BitmapDownloader {
 
 		private int indexOfQueuedDownloadWithDifferentURL() {
 			for (Download download : mQueuedDownloads) {
-				if(download == null) {
+				if (download == null) {
 					continue;
 				}
 				ImageView otherImageView = download.getImageView();
 				ImageView thisImageView = getImageView();
-				if(thisImageView == null || otherImageView == null) {
+				if (thisImageView == null || otherImageView == null) {
 					continue;
 				}
 				if (otherImageView.equals(thisImageView) && !download.getUrl().equals(mUrl)) {
@@ -216,7 +216,7 @@ public class BitmapDownloader {
 
 		private boolean isAnotherQueuedOrRunningWithSameUrl() {
 			for (Download download : mQueuedDownloads) {
-				if(download == null) {
+				if (download == null) {
 					continue;
 				}
 				if (download.getUrl().equals(mUrl)) {
@@ -224,7 +224,7 @@ public class BitmapDownloader {
 				}
 			}
 			for (Download download : mRunningDownloads) {
-				if(download == null) {
+				if (download == null) {
 					continue;
 				}
 				if (download.getUrl().equals(mUrl)) {
@@ -243,8 +243,8 @@ public class BitmapDownloader {
 			loadImage();
 
 			ArrayList<Download> duplicates = mDuplicateDownloads.get(mUrl);
-			if(duplicates != null) {
-				for(Download dup: duplicates) {
+			if (duplicates != null) {
+				for (Download dup : duplicates) {
 					Log.d(TAG, "onComplete: " + dup.mUrl);
 					//load the image.
 					dup.loadImage();
@@ -284,8 +284,8 @@ public class BitmapDownloader {
 
 		@Override
 		public void notFound() {
-			if(isAnotherQueuedOrRunningWithSameUrl()) {
-				if(mDuplicateDownloads.containsKey(mUrl)) {
+			if (isAnotherQueuedOrRunningWithSameUrl()) {
+				if (mDuplicateDownloads.containsKey(mUrl)) {
 					ArrayList<Download> arr = mDuplicateDownloads.get(mUrl);
 					arr.add(this);
 					mDuplicateDownloads.put(mUrl, arr);
@@ -309,6 +309,7 @@ public class BitmapDownloader {
 					if (downloadTask != null) {
 						downloadTask.cancel(true);
 						Log.d(TAG, "notFound(Cancelling): " + mUrl);
+						Log.d(TAG, "cancelled: " + runningDownload.getUrl());
 					}
 					Log.d(TAG, "notFound(Queuing): " + mUrl);
 					mQueuedDownloads.add(0, this);

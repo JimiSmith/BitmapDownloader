@@ -27,7 +27,7 @@ import java.security.NoSuchAlgorithmException;
  * @author James Smith
  */
 
-public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
+public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 	private static final String TAG = BitmapDownloaderTask.class.getCanonicalName();
 	public String mUrl;
 	private final WeakReference<ImageView> imageViewReference;
@@ -48,19 +48,26 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 	}
 
 	@Override
-	protected Bitmap doInBackground(String... params) {
+	protected Boolean doInBackground(String... params) {
 		mUrl = params[0];
-		Bitmap bitmap = null;
+		Boolean finished = false;
 		try {
-			bitmap = downloadBitmap();
+			finished = downloadBitmap();
 		} catch (Exception e) {
 			Log.w(TAG, "Error downloading bitmap", e);
 		}
-		return bitmap;
+		return finished;
+	}
+
+	//for 2.2 where onCancelled(Object obj) is not implemented
+	@Override
+	protected void onCancelled() {
+		onCancelled(false);
 	}
 
 	@Override
-	protected void onCancelled(Bitmap bitmap) {
+	protected void onCancelled(Boolean done) {
+		Log.w(TAG, "onCancelled(Boolean):  " + done);
 		mListener.onError();
 		//if the task is cancelled, abort the image request
 		if (mGetRequest != null) {
@@ -72,15 +79,16 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 
 	@Override
 	// Once the image is downloaded, associates it to the imageView
-	protected void onPostExecute(Bitmap bitmap) {
+	protected void onPostExecute(Boolean done) {
 		if (isCancelled()) {
-			bitmap = null;
+			done = false;
 		}
+		Log.w(TAG, "onPostExecute:  " + done);
 
-		if (bitmap == null) {
-			mListener.onError();
-		} else {
+		if (done) {
 			mListener.onComplete();
+		} else {
+			mListener.onError();
 		}
 	}
 
@@ -111,7 +119,7 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 		try {
 			HttpResponse response = client.execute(headRequest);
 			statusCode = response.getStatusLine().getStatusCode();
-			if(statusCode == HttpStatus.SC_TEMPORARY_REDIRECT || statusCode == HttpStatus.SC_MOVED_PERMANENTLY ||
+			if (statusCode == HttpStatus.SC_TEMPORARY_REDIRECT || statusCode == HttpStatus.SC_MOVED_PERMANENTLY ||
 					statusCode == HttpStatus.SC_MOVED_TEMPORARILY) {
 				mUrl = response.getFirstHeader("Location").getValue();
 				return resolveUrl();
@@ -124,12 +132,12 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 		return statusCode;
 	}
 
-	private Bitmap downloadBitmap() {
+	private Boolean downloadBitmap() {
 		if (isCancelled()) {
-			return null;
+			return false;
 		}
 		String filename = md5(mUrl); //get the filename before we follow any redirects. very important
-		Bitmap bitmap = null;
+		Boolean finished = true;
 		AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
 		mGetRequest = new HttpGet(mUrl);
 
@@ -137,11 +145,11 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 			HttpResponse response = client.execute(mGetRequest);
 			int statusCode = response.getStatusLine().getStatusCode();
 
-			if(statusCode == HttpStatus.SC_TEMPORARY_REDIRECT || statusCode == HttpStatus.SC_MOVED_PERMANENTLY ||
+			if (statusCode == HttpStatus.SC_TEMPORARY_REDIRECT || statusCode == HttpStatus.SC_MOVED_PERMANENTLY ||
 					statusCode == HttpStatus.SC_MOVED_TEMPORARILY) {
 				statusCode = resolveUrl();
 
-				if(statusCode == HttpStatus.SC_OK) {
+				if (statusCode == HttpStatus.SC_OK) {
 					mGetRequest = new HttpGet(mUrl);
 					response = client.execute(mGetRequest);
 					statusCode = response.getStatusLine().getStatusCode();
@@ -150,13 +158,13 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 
 			if (isCancelled()) {
 				Log.i(TAG, "Download of " + mUrl + " was cancelled");
-				bitmap = null;
+				finished = false;
 			} else if (statusCode != HttpStatus.SC_OK) {
 				Log.w(TAG, "Error " + statusCode + " while retrieving bitmap from " + mUrl);
-				bitmap = null;
+				finished = false;
 			} else {
 				if (isCancelled()) {
-					return null;
+					return false;
 				}
 				HttpEntity entity = response.getEntity();
 				if (entity != null) {
@@ -164,23 +172,18 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 					try {
 						inputStream = entity.getContent();
 						if (isCancelled()) {
-							return null;
+							return false;
 						}
-						ByteArrayOutputStream bos = new ByteArrayOutputStream();
+						FileOutputStream fos = mContext.openFileOutput(filename, Context.MODE_PRIVATE);
 
 						byte[] buffer = new byte[1024];
 						int len = 0;
 						while (!isCancelled() && (len = inputStream.read(buffer)) > 0) {
-							bos.write(buffer, 0, len);
+							fos.write(buffer, 0, len);
 						}
-						bos.close();
+						fos.close();
 						if (isCancelled()) {
-							return null;
-						}
-						bitmap = BitmapFactory.decodeByteArray(bos.toByteArray(), 0, bos.size());
-						if (bitmap != null) {
-							FileOutputStream local = mContext.openFileOutput(filename, Context.MODE_PRIVATE);
-							bitmap.compress(Bitmap.CompressFormat.PNG, 100, local);
+							return false;
 						}
 					} finally {
 						if (inputStream != null) {
@@ -197,6 +200,6 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
 			mGetRequest = null;
 			client.close();
 		}
-		return bitmap;
+		return finished;
 	}
 }
