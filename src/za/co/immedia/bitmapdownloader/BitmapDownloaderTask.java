@@ -195,6 +195,7 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 			}
 		} catch (Exception e) {
 			mGetRequest.abort();
+			finished = false;
 			Log.w(TAG, "Error while retrieving bitmap from " + mUrl, e);
 		} finally {
 			mGetRequest = null;

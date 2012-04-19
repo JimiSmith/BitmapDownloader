@@ -56,6 +56,7 @@ public class BitmapDownloader {
 		Bitmap cachedBitmap = mBitmapCache.getBitmap(url);
 
 		if (cachedBitmap != null) {
+			//if there is a running/queued download for this imageview, we should clear that here
 			imageView.setImageBitmap(cachedBitmap);
 		} else {
 			Download d = new Download(url, imageView);
@@ -294,16 +295,16 @@ public class BitmapDownloader {
 					arr.add(this);
 					mDuplicateDownloads.put(mUrl, arr);
 				}
-			} else if (mRunningDownloads.size() >= mMaxDownloads) {
+			} else {
 				//check if this imageView is being used with a different URL, if so cancel the other one.
 				int queuedIndex = indexOfQueuedDownloadWithDifferentURL();
 				int downloadIndex = indexOfDownloadWithDifferentURL();
-				if (queuedIndex != -1) {
+				while (queuedIndex != -1) {
 					mQueuedDownloads.remove(queuedIndex);
 					Log.d(TAG, "notFound(Removing): " + mUrl);
-					Log.d(TAG, "notFound(Queuing): " + mUrl);
-					mQueuedDownloads.add(queuedIndex, this);
-				} else if (downloadIndex != -1) {
+					queuedIndex = indexOfQueuedDownloadWithDifferentURL();
+				}
+				if (downloadIndex != -1) {
 					Download runningDownload = mRunningDownloads.get(downloadIndex);
 					BitmapDownloaderTask downloadTask = runningDownload.getBitmapDownloaderTask();
 					if (downloadTask != null) {
@@ -311,15 +312,20 @@ public class BitmapDownloader {
 						Log.d(TAG, "notFound(Cancelling): " + mUrl);
 						Log.d(TAG, "cancelled: " + runningDownload.getUrl());
 					}
-					Log.d(TAG, "notFound(Queuing): " + mUrl);
-					mQueuedDownloads.add(0, this);
-				} else if (!(isBeingDownloaded() || isQueuedForDownload())) {
-					Log.d(TAG, "notFound(Queuing): " + mUrl);
-					mQueuedDownloads.add(this);
 				}
-			} else if (!(isBeingDownloaded() || isQueuedForDownload())) {
-				Log.d(TAG, "notFound(Downloading): " + mUrl);
-				doDownload();
+
+				if (!(isBeingDownloaded() || isQueuedForDownload())) {
+					if (mRunningDownloads.size() >= mMaxDownloads) {
+						Log.d(TAG, "notFound(Queuing): " + mUrl);
+						mQueuedDownloads.add(this);
+					} else {
+						Log.d(TAG, "notFound(Downloading): " + mUrl);
+						doDownload();
+					}
+				}
+//			} else if (!(isBeingDownloaded() || isQueuedForDownload())) {
+//				Log.d(TAG, "notFound(Downloading): " + mUrl);
+//				doDownload();
 			}
 		}
 
