@@ -53,15 +53,8 @@ public class BitmapDownloader {
 	}
 
 	public void download(String url, ImageView imageView) {
-		Bitmap cachedBitmap = mBitmapCache.getBitmap(url);
-
-		if (cachedBitmap != null) {
-			//if there is a running/queued download for this imageview, we should clear that here
-			imageView.setImageBitmap(cachedBitmap);
-		} else {
-			Download d = new Download(url, imageView);
-			d.loadImage();
-		}
+		Download d = new Download(url, imageView);
+		d.loadImage();
 	}
 
 	public void cancelAllDownloads() {
@@ -115,8 +108,29 @@ public class BitmapDownloader {
 		}
 
 		public void loadImage() {
+			Bitmap cachedBitmap = mBitmapCache.getBitmap(mUrl);
 			ImageView imageView = mImageViewRef.get();
-			if (imageView != null) { //if the ImageView hasn't been GC'd yet
+			if (cachedBitmap != null && imageView != null) {
+				//check if this imageView is being used with a different URL, if so cancel the other one.
+				int queuedIndex = indexOfQueuedDownloadWithDifferentURL();
+				int downloadIndex = indexOfDownloadWithDifferentURL();
+				while (queuedIndex != -1) {
+					mQueuedDownloads.remove(queuedIndex);
+					Log.d(TAG, "notFound(Removing): " + mUrl);
+					queuedIndex = indexOfQueuedDownloadWithDifferentURL();
+				}
+				if (downloadIndex != -1) {
+					Download runningDownload = mRunningDownloads.get(downloadIndex);
+					BitmapDownloaderTask downloadTask = runningDownload.getBitmapDownloaderTask();
+					if (downloadTask != null) {
+						downloadTask.cancel(true);
+						Log.d(TAG, "notFound(Cancelling): " + mUrl);
+						Log.d(TAG, "cancelled: " + runningDownload.getUrl());
+					}
+				}
+
+				imageView.setImageBitmap(cachedBitmap);
+			} else if (imageView != null) { //if the ImageView hasn't been GC'd yet
 				imageView.setTag(DOWNLOAD_TAG, this);
 
 				try {
@@ -284,6 +298,18 @@ public class BitmapDownloader {
 		}
 
 		@Override
+		public void onCancel() {
+			Log.d(TAG, "onCancel: " + mUrl);
+			mRunningDownloads.remove(this);
+			if (!mQueuedDownloads.isEmpty()) {
+				Download d = mQueuedDownloads.remove(0);
+				d.doDownload();
+			}
+			bitmapDownloaderTaskReference.clear();
+			bitmapLoaderTaskReference.clear();
+		}
+
+		@Override
 		public void notFound() {
 			if (isAnotherQueuedOrRunningWithSameUrl()) {
 				if (mDuplicateDownloads.containsKey(mUrl)) {
@@ -323,9 +349,6 @@ public class BitmapDownloader {
 						doDownload();
 					}
 				}
-//			} else if (!(isBeingDownloaded() || isQueuedForDownload())) {
-//				Log.d(TAG, "notFound(Downloading): " + mUrl);
-//				doDownload();
 			}
 		}
 

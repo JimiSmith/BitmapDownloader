@@ -39,6 +39,8 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 		public void onComplete();
 
 		public void onError();
+
+		public void onCancel();
 	}
 
 	public BitmapDownloaderTask(ImageView imageView, BitmapDownloadListener listener) {
@@ -68,7 +70,7 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 	@Override
 	protected void onCancelled(Boolean done) {
 		Log.w(TAG, "onCancelled(Boolean):  " + done);
-		mListener.onError();
+		mListener.onCancel();
 		//if the task is cancelled, abort the image request
 		if (mGetRequest != null) {
 			Log.w(TAG, "Aborting get request for:  " + mUrl);

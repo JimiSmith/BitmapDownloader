@@ -20,6 +20,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	private Context mContext;
 	private BitmapLoadListener mListener;
 	public String mUrl;
+	private boolean mError;
 
 	public interface BitmapLoadListener {
 		public void onLoaded();
@@ -76,10 +77,14 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 				bitmap = BitmapFactory.decodeStream(local);
 				if (bitmap == null) {
 					Log.w(TAG, "The file specified is corrupt.");
-					throw new FileNotFoundException("The file specified is corrupt.");
+					throw new Exception("The file specified is corrupt.");
 				}
 			} catch (FileNotFoundException e) {
 				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.");
+			} catch (Exception e) {
+				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.");
+				mContext.deleteFile(filename);
+				mError = true;
 			}
 		}
 		return bitmap;
@@ -87,7 +92,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 
 	@Override
 	protected void onPostExecute(Bitmap bitmap) {
-		if (bitmap == null) {
+		if (bitmap == null && !mError) {
 			mListener.notFound();
 		} else {
 			if (isCancelled()) {
@@ -95,11 +100,11 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 			}
 			ImageView imageView = imageViewReference.get();
 
-			if (imageView != null) {
+			if (imageView != null && !mError) {
 
 				BitmapDownloader.Download download = (BitmapDownloader.Download) imageView.getTag(BitmapDownloader.DOWNLOAD_TAG);
 
-				if(this == download.getBitmapLoaderTask() && bitmap != null) {
+				if (this == download.getBitmapLoaderTask() && bitmap != null) {
 					imageView.setImageBitmap(bitmap);
 					imageView.requestLayout();
 					mListener.addToCache(bitmap);
