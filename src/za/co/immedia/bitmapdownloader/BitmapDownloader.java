@@ -1,17 +1,16 @@
 package za.co.immedia.bitmapdownloader;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LevelListDrawable;
-
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LevelListDrawable;
 import android.util.Log;
 import android.widget.ImageView;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class BitmapDownloader {
 
@@ -110,43 +109,37 @@ public class BitmapDownloader {
 		public void loadImage() {
 			Bitmap cachedBitmap = mBitmapCache.getBitmap(mUrl);
 			ImageView imageView = mImageViewRef.get();
-			if (cachedBitmap != null && imageView != null) {
-				//check if this imageView is being used with a different URL, if so cancel the other one.
-				int queuedIndex = indexOfQueuedDownloadWithDifferentURL();
-				int downloadIndex = indexOfDownloadWithDifferentURL();
-				while (queuedIndex != -1) {
-					mQueuedDownloads.remove(queuedIndex);
-					Log.d(TAG, "notFound(Removing): " + mUrl);
-					queuedIndex = indexOfQueuedDownloadWithDifferentURL();
-				}
-				if (downloadIndex != -1) {
-					Download runningDownload = mRunningDownloads.get(downloadIndex);
-					BitmapDownloaderTask downloadTask = runningDownload.getBitmapDownloaderTask();
+			if (imageView != null) {
+				Download oldDownload = (Download) imageView.getTag(DOWNLOAD_TAG);
+				if (oldDownload != null) {
+					if (mQueuedDownloads.contains(oldDownload)) {
+						mQueuedDownloads.remove(oldDownload);
+					}
+					BitmapDownloaderTask downloadTask = oldDownload.getBitmapDownloaderTask();
 					if (downloadTask != null) {
 						downloadTask.cancel(true);
-						Log.d(TAG, "notFound(Cancelling): " + mUrl);
-						Log.d(TAG, "cancelled: " + runningDownload.getUrl());
 					}
 				}
-
-				imageView.setImageBitmap(cachedBitmap);
-			} else if (imageView != null) { //if the ImageView hasn't been GC'd yet
 				imageView.setTag(DOWNLOAD_TAG, this);
+				if (cachedBitmap != null) {
+					imageView.setImageBitmap(cachedBitmap);
+				} else { //if the ImageView hasn't been GC'd yet
 
-				try {
-					((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.IN_PROGRESS);
-				} catch (ClassCastException e) {
-					DownloadedDrawable d = new DownloadedDrawable();
-					d.setInProgressDrawable(mInProgressDrawable);
-					d.setErrorDrawable(mErrorDrawable);
-					imageView.setImageDrawable(d);
-					((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.IN_PROGRESS);
+					try {
+						((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.IN_PROGRESS);
+					} catch (ClassCastException e) {
+						DownloadedDrawable d = new DownloadedDrawable();
+						d.setInProgressDrawable(mInProgressDrawable);
+						d.setErrorDrawable(mErrorDrawable);
+						imageView.setImageDrawable(d);
+						((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.IN_PROGRESS);
+					}
+
+					BitmapLoaderTask bitmapLoaderTask = new BitmapLoaderTask(imageView, this);
+					bitmapLoaderTaskReference = new WeakReference<BitmapLoaderTask>(bitmapLoaderTask);
+					bitmapLoaderTask.execute(mUrl);
+					Log.d(TAG, "loadImage: " + mUrl);
 				}
-
-				BitmapLoaderTask bitmapLoaderTask = new BitmapLoaderTask(imageView, this);
-				bitmapLoaderTaskReference = new WeakReference<BitmapLoaderTask>(bitmapLoaderTask);
-				bitmapLoaderTask.execute(mUrl);
-				Log.d(TAG, "loadImage: " + mUrl);
 			}
 		}
 
