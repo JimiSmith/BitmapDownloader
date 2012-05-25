@@ -72,10 +72,12 @@ public class BitmapDownloader {
 		private WeakReference<ImageView> mImageViewRef;
 		private WeakReference<BitmapDownloaderTask> bitmapDownloaderTaskReference;
 		private WeakReference<BitmapLoaderTask> bitmapLoaderTaskReference;
+		private boolean mIsCancelled;
 
 		public Download(String url, ImageView imageView) {
 			this.mUrl = url;
 			this.mImageViewRef = new WeakReference<ImageView>(imageView);
+			mIsCancelled = false;
 			DownloadedDrawable d = new DownloadedDrawable();
 			d.setInProgressDrawable(mInProgressDrawable);
 			d.setErrorDrawable(mErrorDrawable);
@@ -107,23 +109,19 @@ public class BitmapDownloader {
 		}
 
 		public void loadImage() {
+			if (mIsCancelled) return; //do not load the image if we have cancelled the operation
 			Bitmap cachedBitmap = mBitmapCache.getBitmap(mUrl);
 			ImageView imageView = mImageViewRef.get();
 			if (imageView != null) {
 				Download oldDownload = (Download) imageView.getTag(DOWNLOAD_TAG);
 				if (oldDownload != null) {
-					if (mQueuedDownloads.contains(oldDownload)) {
-						mQueuedDownloads.remove(oldDownload);
-					}
-					BitmapDownloaderTask downloadTask = oldDownload.getBitmapDownloaderTask();
-					if (downloadTask != null) {
-						downloadTask.cancel(true);
-					}
+					Log.d(TAG, "found old download: " + mUrl);
+					oldDownload.cancel();
 				}
 				imageView.setTag(DOWNLOAD_TAG, this);
 				if (cachedBitmap != null) {
 					imageView.setImageBitmap(cachedBitmap);
-				} else { //if the ImageView hasn't been GC'd yet
+				} else {
 
 					try {
 						((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.IN_PROGRESS);
@@ -144,6 +142,7 @@ public class BitmapDownloader {
 		}
 
 		public void doDownload() {
+			if (mIsCancelled) return; //do not load the image if we have cancelled the operation
 			ImageView imageView = mImageViewRef.get();
 			if (imageView != null) { //if the ImageView hasn't been GC'd yet
 				BitmapDownloaderTask task = new BitmapDownloaderTask(imageView, this);
@@ -169,6 +168,19 @@ public class BitmapDownloader {
 				}
 			}
 			return false;
+		}
+
+		private void cancel() {
+			mIsCancelled = true;
+
+			if (mQueuedDownloads.contains(this)) {
+				mQueuedDownloads.remove(this);
+			}
+
+			BitmapDownloaderTask downloadTask = getBitmapDownloaderTask();
+			if (downloadTask != null) {
+				downloadTask.cancel(true);
+			}
 		}
 
 		private int indexOfDownloadWithDifferentURL() {
@@ -242,11 +254,11 @@ public class BitmapDownloader {
 			return false;
 		}
 
+		//called when the download has completed
 		@Override
 		public void onComplete() {
 			mRunningDownloads.remove(this);
 			Log.d(TAG, "onComplete: " + mUrl);
-			//load the image.
 
 			loadImage();
 
@@ -266,6 +278,7 @@ public class BitmapDownloader {
 			}
 		}
 
+		//called if there is an error with the download
 		@Override
 		public void onError() {
 			Log.d(TAG, "onError: " + mUrl);
@@ -290,8 +303,10 @@ public class BitmapDownloader {
 			bitmapLoaderTaskReference.clear();
 		}
 
+		//called if the download is cancelled
 		@Override
 		public void onCancel() {
+			mIsCancelled = true;
 			Log.d(TAG, "onCancel: " + mUrl);
 			mRunningDownloads.remove(this);
 			if (!mQueuedDownloads.isEmpty()) {
@@ -302,6 +317,7 @@ public class BitmapDownloader {
 			bitmapLoaderTaskReference.clear();
 		}
 
+		//called if the file is not found on the file system
 		@Override
 		public void notFound() {
 			if (isAnotherQueuedOrRunningWithSameUrl()) {
@@ -354,6 +370,10 @@ public class BitmapDownloader {
 		public void onLoaded() {
 			Log.d(TAG, "onLoaded: " + mUrl);
 			bitmapLoaderTaskReference.clear();
+			ImageView imageView = getImageView();
+			if (imageView != null) {
+				imageView.setTag(DOWNLOAD_TAG, null);
+			}
 		}
 
 		@Override
