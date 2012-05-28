@@ -104,7 +104,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 
 				BitmapDownloader.Download download = (BitmapDownloader.Download) imageView.getTag(BitmapDownloader.DOWNLOAD_TAG);
 
-				if (this == download.getBitmapLoaderTask() && bitmap != null) {
+				if (bitmap != null && download != null && this == download.getBitmapLoaderTask()) {
 					imageView.setImageBitmap(bitmap);
 					imageView.requestLayout();
 					mListener.addToCache(bitmap);
