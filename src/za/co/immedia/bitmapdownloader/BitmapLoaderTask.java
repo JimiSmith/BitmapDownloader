@@ -50,11 +50,9 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	private boolean mError;
 
 	public interface BitmapLoadListener {
-		public void onLoaded();
-
 		public void notFound();
 
-		public void addToCache(Bitmap b);
+		public void loadBitmap(Bitmap b);
 
 		public void onLoadError();
 	}
@@ -125,10 +123,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 				BitmapDownloader.Download download = (BitmapDownloader.Download) imageView.getTag(BitmapDownloader.DOWNLOAD_TAG);
 
 				if (bitmap != null && download != null && this == download.getBitmapLoaderTask()) {
-					imageView.setImageBitmap(bitmap);
-					imageView.requestLayout();
-					mListener.addToCache(bitmap);
-					mListener.onLoaded();
+					mListener.loadBitmap(bitmap);
 				} else {
 					mListener.onLoadError();
 				}

@@ -34,8 +34,10 @@ import java.util.HashMap;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
@@ -54,6 +56,12 @@ public class BitmapDownloader {
 	private int mMaxDownloads;
 	private Drawable mErrorDrawable;
 	private Drawable mInProgressDrawable;
+	private boolean mAnimateImageAppearance = false;
+	private boolean mAnimateImageAppearanceAfterDownload = true;
+
+	public static enum AnimateAppearance {
+		ANIMATE_ALWAYS, ANIMATE_AFTER_DOWNLOAD, ANIMATE_NEVER
+	}
 
 	public BitmapDownloader() {
 		setup(5);
@@ -80,6 +88,29 @@ public class BitmapDownloader {
 		this.mInProgressDrawable = inProgressDrawable;
 	}
 
+	public void setAnimateImageAppearance(AnimateAppearance animate) {
+		switch (animate) {
+		case ANIMATE_ALWAYS: {
+			mAnimateImageAppearance = true;
+			mAnimateImageAppearanceAfterDownload = true;
+			break;
+		}
+		case ANIMATE_AFTER_DOWNLOAD: {
+			mAnimateImageAppearance = false;
+			mAnimateImageAppearanceAfterDownload = true;
+			break;
+		}
+		case ANIMATE_NEVER: {
+			mAnimateImageAppearance = false;
+			mAnimateImageAppearanceAfterDownload = false;
+			break;
+		}
+
+		default:
+			break;
+		}
+	}
+
 	public void download(String url, ImageView imageView) {
 		Download d = new Download(url, imageView);
 		d.loadImage();
@@ -102,12 +133,13 @@ public class BitmapDownloader {
 		private WeakReference<BitmapDownloaderTask> bitmapDownloaderTaskReference;
 		private WeakReference<BitmapLoaderTask> bitmapLoaderTaskReference;
 		private boolean mIsCancelled;
+		private boolean mWasDownloaded = false;
 
 		public Download(String url, ImageView imageView) {
 			this.mUrl = url;
 			this.mImageViewRef = new WeakReference<ImageView>(imageView);
 			mIsCancelled = false;
-			imageView.setImageDrawable(new ColorDrawable(Color.TRANSPARENT));
+			loadDrawable(new ColorDrawable(Color.TRANSPARENT), false);
 		}
 
 		public BitmapDownloaderTask getBitmapDownloaderTask() {
@@ -135,7 +167,7 @@ public class BitmapDownloader {
 		}
 
 		@SuppressLint("NewApi")
-    public void loadImage() {
+		public void loadImage() {
 			if (mIsCancelled)
 				return; // do not load the image if we have cancelled the operation
 			ImageView imageView = mImageViewRef.get();
@@ -149,15 +181,17 @@ public class BitmapDownloader {
 				}
 				imageView.setTag(DOWNLOAD_TAG, this);
 				if (cachedBitmap != null) {
-					imageView.setImageBitmap(cachedBitmap);
+					mWasDownloaded = false;
+					BitmapDrawable bm = new BitmapDrawable(imageView.getResources(), cachedBitmap);
+					loadDrawable(bm);
 				} else {
 					BitmapLoaderTask bitmapLoaderTask = new BitmapLoaderTask(imageView, this);
 					bitmapLoaderTaskReference = new WeakReference<BitmapLoaderTask>(bitmapLoaderTask);
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 						bitmapLoaderTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mUrl);
-          } else {
-  					bitmapLoaderTask.execute(mUrl);
-          }
+					} else {
+						bitmapLoaderTask.execute(mUrl);
+					}
 				}
 			}
 		}
@@ -276,11 +310,34 @@ public class BitmapDownloader {
 			return false;
 		}
 
+		private void loadDrawable(Drawable d) {
+			loadDrawable(d, true);
+		}
+
+		private void loadDrawable(Drawable d, boolean animate) {
+			ImageView imageView = getImageView();
+			if (imageView != null) {
+				if (animate && (mAnimateImageAppearance || (mAnimateImageAppearanceAfterDownload && mWasDownloaded))) {
+					Drawable current = imageView.getDrawable();
+					if (current == null) {
+						current = new ColorDrawable(Color.TRANSPARENT);
+					}
+					Drawable[] layers = { current, d };
+					TransitionDrawable drawable = new TransitionDrawable(layers);
+					imageView.setImageDrawable(drawable);
+					drawable.startTransition(200);
+				} else {
+					imageView.setImageDrawable(d);
+				}
+			}
+		}
+
 		// called when the download has completed
 		@Override
 		public void onComplete() {
 			mRunningDownloads.remove(this);
 			Log.d(TAG, "onComplete: " + mUrl);
+			mWasDownloaded = true;
 
 			loadImage();
 
@@ -307,7 +364,8 @@ public class BitmapDownloader {
 			mRunningDownloads.remove(this);
 			ImageView imageView = mImageViewRef.get();
 			if (imageView != null) {
-				imageView.setImageDrawable(mErrorDrawable);
+				mWasDownloaded = true;
+				loadDrawable(mErrorDrawable);
 			}
 			if (!mQueuedDownloads.isEmpty()) {
 				Download d = mQueuedDownloads.remove(0);
@@ -336,7 +394,7 @@ public class BitmapDownloader {
 		public void notFound() {
 			ImageView imageView = getImageView();
 			if (imageView != null) {
-				imageView.setImageDrawable(mInProgressDrawable);
+				loadDrawable(mInProgressDrawable, false);
 			}
 			if (isAnotherQueuedOrRunningWithSameUrl()) {
 				if (mDuplicateDownloads.containsKey(mUrl)) {
@@ -381,18 +439,17 @@ public class BitmapDownloader {
 		}
 
 		@Override
-		public void addToCache(Bitmap b) {
+		public void loadBitmap(Bitmap b) {
+			Log.d(TAG, "loadBitmap: " + mUrl);
 			mBitmapCache.addBitmap(mUrl, b);
-		}
-
-		@Override
-		public void onLoaded() {
-			Log.d(TAG, "onLoaded: " + mUrl);
 			bitmapLoaderTaskReference.clear();
 			ImageView imageView = getImageView();
 			if (imageView != null) {
+				BitmapDrawable bm = new BitmapDrawable(imageView.getResources(), b);
+				loadDrawable(bm);
 				imageView.setTag(DOWNLOAD_TAG, null);
 			}
+			mWasDownloaded = false;
 		}
 
 		@Override
