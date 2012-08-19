@@ -37,30 +37,51 @@ import java.util.LinkedHashMap;
  *
  */
 public class BitmapCache {
-	private final LinkedHashMap<String, SoftReference<Bitmap> > mBitmapCache;
-	private static final Integer CACHE_SIZE = 150;
+	private final LinkedHashMap<String, SoftReference<Bitmap> > mSoftBitmapCache;
+	private final LinkedHashMap<String, Bitmap> mStrongBitmapCache;
+	private static final Integer SOFT_CACHE_SIZE = 150;
+	private static final Integer STRONG_CACHE_SIZE = 30;
 //	static private final String TAG = BitmapCache.class.getCanonicalName();
 	public BitmapCache() {
-		mBitmapCache = new LinkedHashMap<String, SoftReference<Bitmap>>();
+		mSoftBitmapCache = new LinkedHashMap<String, SoftReference<Bitmap>>();
+		mStrongBitmapCache = new LinkedHashMap<String, Bitmap>();
 	}
 	
 	public void addBitmap(String url, Bitmap b) {
-		if(mBitmapCache.size() > CACHE_SIZE) {
-			mBitmapCache.remove(mBitmapCache.keySet().toArray()[0]);
-		}
-		mBitmapCache.put(url, new SoftReference<Bitmap>(b));
+		addToStrongCache(url, b);
 	}
 	
 	public Bitmap getBitmap(String url) {
-		SoftReference<Bitmap> ref = mBitmapCache.get(url);
-		if(ref != null) {
-			Bitmap b = ref.get();
-			if (b == null || b.isRecycled()) {
-				mBitmapCache.remove(url);
-				return null;
-			}
-			return ref.get();
-		}
+		Bitmap b = mStrongBitmapCache.get(url);
+		if (b != null) {
+	    return b;
+    } else {
+  		SoftReference<Bitmap> ref = mSoftBitmapCache.get(url);
+  		if(ref != null) {
+  			b = ref.get();
+  			if (b == null || b.isRecycled()) {
+  				mSoftBitmapCache.remove(url);
+  				return null;
+  			}
+  			return b;
+  		}
+    }
 		return null;
+	}
+	
+	private void addToStrongCache(String url, Bitmap b) {
+		if(mStrongBitmapCache.size() > STRONG_CACHE_SIZE) {
+			String key = (String) mStrongBitmapCache.keySet().toArray()[0];
+			Bitmap value = (Bitmap) mStrongBitmapCache.remove(key);
+			addToSoftCache(key, value);
+		}
+		mStrongBitmapCache.put(url, b);
+	}
+	
+	private void addToSoftCache(String url, Bitmap b) {
+		if(mSoftBitmapCache.size() > SOFT_CACHE_SIZE) {
+			mSoftBitmapCache.remove(mSoftBitmapCache.keySet().toArray()[0]);
+		}
+		mSoftBitmapCache.put(url, new SoftReference<Bitmap>(b));
 	}
 }
