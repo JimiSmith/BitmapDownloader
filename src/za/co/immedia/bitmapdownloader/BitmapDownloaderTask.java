@@ -3,25 +3,23 @@
  */
 package za.co.immedia.bitmapdownloader;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
-import android.net.http.AndroidHttpClient;
-import android.os.AsyncTask;
-import android.util.Log;
-import android.widget.ImageView;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 
-import java.io.*;
-import java.lang.ref.WeakReference;
-import java.net.MalformedURLException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import android.content.Context;
+import android.net.http.AndroidHttpClient;
+import android.os.AsyncTask;
+import android.util.Log;
+import android.widget.ImageView;
 
 /**
  * @author James Smith
@@ -30,7 +28,6 @@ import java.security.NoSuchAlgorithmException;
 public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 	private static final String TAG = BitmapDownloaderTask.class.getCanonicalName();
 	public String mUrl;
-	private final WeakReference<ImageView> imageViewReference;
 	private final Context mContext;
 	private final BitmapDownloadListener mListener;
 	private HttpGet mGetRequest;
@@ -44,7 +41,6 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 	}
 
 	public BitmapDownloaderTask(ImageView imageView, BitmapDownloadListener listener) {
-		imageViewReference = new WeakReference<ImageView>(imageView);
 		mContext = imageView.getContext().getApplicationContext();
 		mListener = listener;
 	}

@@ -1,17 +1,18 @@
 package za.co.immedia.bitmapdownloader;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.lang.ref.WeakReference;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.ImageView;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.lang.ref.WeakReference;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	private static final String TAG = BitmapLoaderTask.class.getCanonicalName();
@@ -38,7 +39,8 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 		mListener = listener;
 	}
 
-	@Override
+	@SuppressLint("NewApi")
+  @Override
 	protected void onCancelled(Bitmap bitmap) {
 		super.onCancelled(bitmap);
 	}
@@ -77,14 +79,12 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 				bitmap = BitmapFactory.decodeStream(local);
 				if (bitmap == null) {
 					Log.w(TAG, "The file specified is corrupt.");
-					throw new Exception("The file specified is corrupt.");
+					mContext.deleteFile(filename);
+					mError = true;
+					throw new FileNotFoundException("The file specified is corrupt.");
 				}
 			} catch (FileNotFoundException e) {
-				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.");
-			} catch (Exception e) {
-				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.");
-				mContext.deleteFile(filename);
-				mError = true;
+				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.", e);
 			}
 		}
 		return bitmap;

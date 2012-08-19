@@ -1,16 +1,15 @@
 package za.co.immedia.bitmapdownloader;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LevelListDrawable;
 import android.util.Log;
 import android.widget.ImageView;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 public class BitmapDownloader {
 
@@ -78,10 +77,7 @@ public class BitmapDownloader {
 			this.mUrl = url;
 			this.mImageViewRef = new WeakReference<ImageView>(imageView);
 			mIsCancelled = false;
-			DownloadedDrawable d = new DownloadedDrawable();
-			d.setInProgressDrawable(mInProgressDrawable);
-			d.setErrorDrawable(mErrorDrawable);
-			imageView.setImageDrawable(d);
+			imageView.setImageDrawable(mInProgressDrawable);
 		}
 
 		public BitmapDownloaderTask getBitmapDownloaderTask() {
@@ -109,42 +105,35 @@ public class BitmapDownloader {
 		}
 
 		public void loadImage() {
-			if (mIsCancelled) return; //do not load the image if we have cancelled the operation
-			Bitmap cachedBitmap = mBitmapCache.getBitmap(mUrl);
+			if (mIsCancelled)
+				return; // do not load the image if we have cancelled the operation
 			ImageView imageView = mImageViewRef.get();
 			if (imageView != null) {
+				Bitmap cachedBitmap = mBitmapCache.getBitmap(mUrl);
+				// find the old download, cancel it and set this download as the current
+				// download for the imageview
 				Download oldDownload = (Download) imageView.getTag(DOWNLOAD_TAG);
 				if (oldDownload != null) {
-					Log.d(TAG, "found old download: " + mUrl);
 					oldDownload.cancel();
 				}
 				imageView.setTag(DOWNLOAD_TAG, this);
 				if (cachedBitmap != null) {
 					imageView.setImageBitmap(cachedBitmap);
 				} else {
-
-					try {
-						((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.IN_PROGRESS);
-					} catch (ClassCastException e) {
-						DownloadedDrawable d = new DownloadedDrawable();
-						d.setInProgressDrawable(mInProgressDrawable);
-						d.setErrorDrawable(mErrorDrawable);
-						imageView.setImageDrawable(d);
-						((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.IN_PROGRESS);
-					}
+					imageView.setImageDrawable(mInProgressDrawable);
 
 					BitmapLoaderTask bitmapLoaderTask = new BitmapLoaderTask(imageView, this);
 					bitmapLoaderTaskReference = new WeakReference<BitmapLoaderTask>(bitmapLoaderTask);
 					bitmapLoaderTask.execute(mUrl);
-					Log.d(TAG, "loadImage: " + mUrl);
 				}
 			}
 		}
 
 		public void doDownload() {
-			if (mIsCancelled) return; //do not load the image if we have cancelled the operation
+			if (mIsCancelled)
+				return; // do not load the image if we have cancelled the operation
 			ImageView imageView = mImageViewRef.get();
-			if (imageView != null) { //if the ImageView hasn't been GC'd yet
+			if (imageView != null) { // if the ImageView hasn't been GC'd yet
 				BitmapDownloaderTask task = new BitmapDownloaderTask(imageView, this);
 				bitmapDownloaderTaskReference = new WeakReference<BitmapDownloaderTask>(task);
 				task.execute(mUrl);
@@ -254,7 +243,7 @@ public class BitmapDownloader {
 			return false;
 		}
 
-		//called when the download has completed
+		// called when the download has completed
 		@Override
 		public void onComplete() {
 			mRunningDownloads.remove(this);
@@ -266,7 +255,7 @@ public class BitmapDownloader {
 			if (duplicates != null) {
 				for (Download dup : duplicates) {
 					Log.d(TAG, "onComplete: " + dup.mUrl);
-					//load the image.
+					// load the image.
 					dup.loadImage();
 				}
 				mDuplicateDownloads.remove(mUrl);
@@ -278,22 +267,14 @@ public class BitmapDownloader {
 			}
 		}
 
-		//called if there is an error with the download
+		// called if there is an error with the download
 		@Override
 		public void onError() {
 			Log.d(TAG, "onError: " + mUrl);
 			mRunningDownloads.remove(this);
 			ImageView imageView = mImageViewRef.get();
 			if (imageView != null) {
-				try {
-					((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.ERROR);
-				} catch (ClassCastException e) {
-					DownloadedDrawable d = new DownloadedDrawable();
-					d.setInProgressDrawable(mInProgressDrawable);
-					d.setErrorDrawable(mErrorDrawable);
-					imageView.setImageDrawable(d);
-					((DownloadedDrawable) imageView.getDrawable()).setShownBitmap(DownloadedDrawable.ShownDrawable.ERROR);
-				}
+				imageView.setImageDrawable(mErrorDrawable);
 			}
 			if (!mQueuedDownloads.isEmpty()) {
 				Download d = mQueuedDownloads.remove(0);
@@ -303,7 +284,7 @@ public class BitmapDownloader {
 			bitmapLoaderTaskReference.clear();
 		}
 
-		//called if the download is cancelled
+		// called if the download is cancelled
 		@Override
 		public void onCancel() {
 			mIsCancelled = true;
@@ -317,7 +298,7 @@ public class BitmapDownloader {
 			bitmapLoaderTaskReference.clear();
 		}
 
-		//called if the file is not found on the file system
+		// called if the file is not found on the file system
 		@Override
 		public void notFound() {
 			if (isAnotherQueuedOrRunningWithSameUrl()) {
@@ -331,7 +312,8 @@ public class BitmapDownloader {
 					mDuplicateDownloads.put(mUrl, arr);
 				}
 			} else {
-				//check if this imageView is being used with a different URL, if so cancel the other one.
+				// check if this imageView is being used with a different URL, if so
+				// cancel the other one.
 				int queuedIndex = indexOfQueuedDownloadWithDifferentURL();
 				int downloadIndex = indexOfDownloadWithDifferentURL();
 				while (queuedIndex != -1) {
@@ -380,60 +362,6 @@ public class BitmapDownloader {
 		public void onLoadError() {
 			Log.d(TAG, "onLoadError: " + mUrl);
 			bitmapLoaderTaskReference.clear();
-		}
-	}
-
-	public static class DownloadedDrawable extends LevelListDrawable {
-
-		public static enum ShownDrawable {
-			DEFAULT,
-			IN_PROGRESS,
-			COMPLETE,
-			ERROR
-		}
-
-		public DownloadedDrawable() {
-		}
-
-		public void setInProgressDrawable(Drawable d) {
-			addLevel(1, 1, d);
-			int alpha = 255;
-			try {
-				alpha = (Integer) d.getClass().getMethod("getAlpha", null).invoke(d, null);
-			} catch (Exception e) {
-				Log.i(TAG, d.toString() + " does not support getAlpha");
-			}
-			setAlpha(alpha);
-			invalidateSelf();
-		}
-
-		public void setCompleteDrawable(Drawable d) {
-			addLevel(2, 2, d);
-			int alpha = 255;
-			try {
-				alpha = (Integer) d.getClass().getMethod("getAlpha", null).invoke(d, null);
-			} catch (Exception e) {
-				Log.i(TAG, d.toString() + " does not support getAlpha");
-			}
-			setAlpha(alpha);
-			invalidateSelf();
-		}
-
-		public void setErrorDrawable(Drawable d) {
-			addLevel(3, 3, d);
-			int alpha = 255;
-			try {
-				alpha = (Integer) d.getClass().getMethod("getAlpha", null).invoke(d, null);
-			} catch (Exception e) {
-				Log.i(TAG, d.toString() + " does not support getAlpha");
-			}
-			setAlpha(alpha);
-			invalidateSelf();
-		}
-
-		public DownloadedDrawable setShownBitmap(ShownDrawable level) {
-			setLevel(level.ordinal());
-			return this;
 		}
 	}
 

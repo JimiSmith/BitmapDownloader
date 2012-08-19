@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
 public class BitmapCache {
 	private final LinkedHashMap<String, SoftReference<Bitmap> > mBitmapCache;
 	private static final Integer CACHE_SIZE = 150;
-	static private final String TAG = BitmapCache.class.getCanonicalName();
+//	static private final String TAG = BitmapCache.class.getCanonicalName();
 	public BitmapCache() {
 		mBitmapCache = new LinkedHashMap<String, SoftReference<Bitmap>>();
 	}
