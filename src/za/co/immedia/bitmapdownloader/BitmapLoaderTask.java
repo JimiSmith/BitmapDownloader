@@ -6,7 +6,6 @@ import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -37,12 +36,6 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 		imageViewReference = new WeakReference<ImageView>(imageView);
 		mContext = imageView.getContext().getApplicationContext();
 		mListener = listener;
-	}
-
-	@SuppressLint("NewApi")
-  @Override
-	protected void onCancelled(Bitmap bitmap) {
-		super.onCancelled(bitmap);
 	}
 
 	public String md5(String s) {

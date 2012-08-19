@@ -4,10 +4,13 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -77,7 +80,7 @@ public class BitmapDownloader {
 			this.mUrl = url;
 			this.mImageViewRef = new WeakReference<ImageView>(imageView);
 			mIsCancelled = false;
-			imageView.setImageDrawable(mInProgressDrawable);
+			imageView.setImageDrawable(new ColorDrawable(Color.TRANSPARENT));
 		}
 
 		public BitmapDownloaderTask getBitmapDownloaderTask() {
@@ -104,7 +107,8 @@ public class BitmapDownloader {
 			return mUrl;
 		}
 
-		public void loadImage() {
+		@SuppressLint("NewApi")
+    public void loadImage() {
 			if (mIsCancelled)
 				return; // do not load the image if we have cancelled the operation
 			ImageView imageView = mImageViewRef.get();
@@ -120,11 +124,13 @@ public class BitmapDownloader {
 				if (cachedBitmap != null) {
 					imageView.setImageBitmap(cachedBitmap);
 				} else {
-					imageView.setImageDrawable(mInProgressDrawable);
-
 					BitmapLoaderTask bitmapLoaderTask = new BitmapLoaderTask(imageView, this);
 					bitmapLoaderTaskReference = new WeakReference<BitmapLoaderTask>(bitmapLoaderTask);
-					bitmapLoaderTask.execute(mUrl);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+						bitmapLoaderTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mUrl);
+          } else {
+  					bitmapLoaderTask.execute(mUrl);
+          }
 				}
 			}
 		}
@@ -301,6 +307,10 @@ public class BitmapDownloader {
 		// called if the file is not found on the file system
 		@Override
 		public void notFound() {
+			ImageView imageView = getImageView();
+			if (imageView != null) {
+				imageView.setImageDrawable(mInProgressDrawable);
+			}
 			if (isAnotherQueuedOrRunningWithSameUrl()) {
 				if (mDuplicateDownloads.containsKey(mUrl)) {
 					ArrayList<Download> arr = mDuplicateDownloads.get(mUrl);
