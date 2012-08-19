@@ -1,8 +1,8 @@
-*/bin/
-*/gen/
+*bin/
+*gen/
 *.apk
-*/classes/
-*/out/
+*classes/
+*out/
 .DS_Store
 .directory
 .idea/
@@ -10,5 +10,5 @@
 *.iws
 *.eml
 *.ipr
-*/.classpath
-*/.project
+*.classpath
+*.project
