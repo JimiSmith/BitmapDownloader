@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012, James Smith
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the <organization> nor the
  *        names of its contributors may be used to endorse or promote products
  *        derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,23 +27,23 @@
 
 package za.co.immedia.bitmapdownloader;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
+import android.content.Context;
+import android.net.http.AndroidHttpClient;
+import android.os.AsyncTask;
+import android.util.Log;
+import android.widget.ImageView;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 
-import android.content.Context;
-import android.net.http.AndroidHttpClient;
-import android.os.AsyncTask;
-import android.util.Log;
-import android.widget.ImageView;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * @author James Smith
@@ -161,9 +161,9 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 		String filename = md5(mUrl); //get the filename before we follow any redirects. very important
 		Boolean finished = true;
 		AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
-		mGetRequest = new HttpGet(mUrl);
 
 		try {
+			mGetRequest = new HttpGet(mUrl);
 			HttpResponse response = client.execute(mGetRequest);
 			int statusCode = response.getStatusLine().getStatusCode();
 
@@ -215,7 +215,14 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 					}
 				}
 			}
-		} catch (Exception e) {
+		} catch (IllegalArgumentException e) {
+			finished = false;
+			Log.w(TAG, "Error while retrieving bitmap from " + mUrl, e);
+		} catch (FileNotFoundException e) {
+			mGetRequest.abort();
+			finished = false;
+			Log.w(TAG, "Error while retrieving bitmap from " + mUrl, e);
+		} catch (IOException e) {
 			mGetRequest.abort();
 			finished = false;
 			Log.w(TAG, "Error while retrieving bitmap from " + mUrl, e);
