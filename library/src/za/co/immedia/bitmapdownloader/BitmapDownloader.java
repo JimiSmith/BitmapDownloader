@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012, James Smith
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the <organization> nor the
  *        names of its contributors may be used to endorse or promote products
  *        derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,10 +27,6 @@
 
 package za.co.immedia.bitmapdownloader;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -42,6 +38,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 import android.widget.ImageView;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class BitmapDownloader {
 
@@ -75,9 +75,7 @@ public class BitmapDownloader {
 		mQueuedDownloads = new ArrayList<Download>();
 		mRunningDownloads = new ArrayList<Download>();
 		mMaxDownloads = maxDownloads;
-		mInProgressDrawable = new ColorDrawable(Color.TRANSPARENT);
 		mDuplicateDownloads = new HashMap<String, ArrayList<Download>>();
-		mErrorDrawable = new ColorDrawable(Color.TRANSPARENT);
 	}
 
 	public void setErrorDrawable(Drawable errorDrawable) {
@@ -139,7 +137,7 @@ public class BitmapDownloader {
 			this.mUrl = url;
 			this.mImageViewRef = new WeakReference<ImageView>(imageView);
 			mIsCancelled = false;
-			loadDrawable(new ColorDrawable(Color.TRANSPARENT), false);
+			imageView.setImageDrawable(null);
 		}
 
 		public BitmapDownloaderTask getBitmapDownloaderTask() {
@@ -315,6 +313,7 @@ public class BitmapDownloader {
 		}
 
 		private void loadDrawable(Drawable d, boolean animate) {
+			Log.d(TAG, "loadDrawable: " + d);
 			ImageView imageView = getImageView();
 			if (imageView != null) {
 				if (animate && (mAnimateImageAppearance || (mAnimateImageAppearanceAfterDownload && mWasDownloaded))) {
@@ -322,7 +321,7 @@ public class BitmapDownloader {
 					if (current == null) {
 						current = new ColorDrawable(Color.TRANSPARENT);
 					}
-					Drawable[] layers = { current, d };
+					Drawable[] layers = {current, d};
 					TransitionDrawable drawable = new TransitionDrawable(layers);
 					imageView.setImageDrawable(drawable);
 					drawable.startTransition(200);
@@ -363,8 +362,8 @@ public class BitmapDownloader {
 			Log.d(TAG, "onError: " + mUrl);
 			mRunningDownloads.remove(this);
 			ImageView imageView = mImageViewRef.get();
-			if (imageView != null) {
-				mWasDownloaded = true;
+			mWasDownloaded = true;
+			if (imageView != null && mErrorDrawable != null) {
 				loadDrawable(mErrorDrawable);
 			}
 			if (!mQueuedDownloads.isEmpty()) {
@@ -393,7 +392,7 @@ public class BitmapDownloader {
 		@Override
 		public void notFound() {
 			ImageView imageView = getImageView();
-			if (imageView != null) {
+			if (imageView != null && mInProgressDrawable != null) {
 				loadDrawable(mInProgressDrawable, false);
 			}
 			if (isAnotherQueuedOrRunningWithSameUrl()) {
