@@ -27,7 +27,6 @@
 
 package za.co.immedia.bitmapdownloader;
 
-import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
@@ -164,7 +163,6 @@ public class BitmapDownloader {
 			return mUrl;
 		}
 
-		@SuppressLint("NewApi")
 		public void loadImage() {
 			if (mIsCancelled)
 				return; // do not load the image if we have cancelled the operation

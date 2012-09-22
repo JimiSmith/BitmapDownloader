@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012, James Smith
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the <organization> nor the
  *        names of its contributors may be used to endorse or promote products
  *        derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,60 +28,38 @@
 package za.co.immedia.bitmapdownloader;
 
 import android.graphics.Bitmap;
-
-import java.lang.ref.SoftReference;
-import java.util.LinkedHashMap;
+import android.os.Build;
+import android.support.v4.util.LruCache;
 
 /**
  * @author jimi
  *
  */
 public class BitmapCache {
-	private final LinkedHashMap<String, SoftReference<Bitmap> > mSoftBitmapCache;
-	private final LinkedHashMap<String, Bitmap> mStrongBitmapCache;
-	private static final Integer SOFT_CACHE_SIZE = 150;
-	private static final Integer STRONG_CACHE_SIZE = 30;
+	private LruCache<String, Bitmap> mBitmapCache;
+
 //	static private final String TAG = BitmapCache.class.getCanonicalName();
 	public BitmapCache() {
-		mSoftBitmapCache = new LinkedHashMap<String, SoftReference<Bitmap>>();
-		mStrongBitmapCache = new LinkedHashMap<String, Bitmap>();
+		mBitmapCache = new LruCache<String, Bitmap> (1024 * 1024 * 3) { // by default use 3mb as a limit for the in memory Lrucache
+			@Override
+			protected int sizeOf(String key, Bitmap bitmap) {
+				// The cache size will be measured in bytes rather than number of items.
+				int byteCount = 0;
+				if (Build.VERSION.SDK_INT < 12) {
+					byteCount = bitmap.getRowBytes() * bitmap.getHeight();
+				} else {
+					byteCount = bitmap.getByteCount();
+				}
+				return byteCount;
+			}
+		};
 	}
-	
+
 	public void addBitmap(String url, Bitmap b) {
-		addToStrongCache(url, b);
+		mBitmapCache.put(url, b);
 	}
-	
+
 	public Bitmap getBitmap(String url) {
-		Bitmap b = mStrongBitmapCache.get(url);
-		if (b != null) {
-	    return b;
-    } else {
-  		SoftReference<Bitmap> ref = mSoftBitmapCache.get(url);
-  		if(ref != null) {
-  			b = ref.get();
-  			if (b == null || b.isRecycled()) {
-  				mSoftBitmapCache.remove(url);
-  				return null;
-  			}
-  			return b;
-  		}
-    }
-		return null;
-	}
-	
-	private void addToStrongCache(String url, Bitmap b) {
-		if(mStrongBitmapCache.size() > STRONG_CACHE_SIZE) {
-			String key = (String) mStrongBitmapCache.keySet().toArray()[0];
-			Bitmap value = (Bitmap) mStrongBitmapCache.remove(key);
-			addToSoftCache(key, value);
-		}
-		mStrongBitmapCache.put(url, b);
-	}
-	
-	private void addToSoftCache(String url, Bitmap b) {
-		if(mSoftBitmapCache.size() > SOFT_CACHE_SIZE) {
-			mSoftBitmapCache.remove(mSoftBitmapCache.keySet().toArray()[0]);
-		}
-		mSoftBitmapCache.put(url, new SoftReference<Bitmap>(b));
+		return mBitmapCache.get(url);
 	}
 }
