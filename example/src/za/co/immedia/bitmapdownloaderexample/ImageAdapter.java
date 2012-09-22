@@ -1,13 +1,13 @@
 package za.co.immedia.bitmapdownloaderexample;
 
-import za.co.immedia.bitmapdownloader.BitmapDownloader;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import za.co.immedia.bitmapdownloader.BitmapDownloader;
 
 public class ImageAdapter extends BaseAdapter {
 
@@ -519,8 +519,8 @@ public class ImageAdapter extends BaseAdapter {
 	public ImageAdapter() {
 		mDownloader.setErrorDrawable(new ColorDrawable(Color.RED));
 		mDownloader.setInProgressDrawable(new ColorDrawable(Color.YELLOW));
-//	mDownloader.setAnimateImageAppearance(AnimateAppearance.ANIMATE_ALWAYS);
-//	mDownloader.setAnimateImageAppearance(AnimateAppearance.ANIMATE_AFTER_DOWNLOAD);
+//	mDownloader.setAnimateImageAppearance(BitmapDownloader.AnimateAppearance.ANIMATE_ALWAYS);
+	mDownloader.setAnimateImageAppearance(BitmapDownloader.AnimateAppearance.ANIMATE_AFTER_DOWNLOAD);
 //	mDownloader.setAnimateImageAppearance(AnimateAppearance.ANIMATE_NEVER);
 	}
 
@@ -541,15 +541,17 @@ public class ImageAdapter extends BaseAdapter {
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		ImageView v = null;
+		ImageView imageView = null;
 		if (convertView == null) {
-			v = new ImageView(parent.getContext());
-			v.setLayoutParams(new AbsListView.LayoutParams(60, 60));
-		} else {
-			v = (ImageView) convertView;
+			LayoutInflater inflator = LayoutInflater.from(parent.getContext());
+			convertView = inflator.inflate(R.layout.list_item, parent, false);
 		}
-		mDownloader.download(URLS[position], v);
-		return v;
+
+		imageView = (ImageView) convertView.findViewById(R.id.imageView);
+
+		mDownloader.download(URLS[position], imageView);
+
+		return convertView;
 	}
 
 }

@@ -2,7 +2,7 @@ package za.co.immedia.bitmapdownloaderexample;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.ListView;
+import android.widget.GridView;
 
 public class ListActivity extends Activity {
 
@@ -11,7 +11,7 @@ public class ListActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_list);
 
-		ListView listView = (ListView) findViewById(R.id.listView);
+		GridView listView = (GridView) findViewById(R.id.listView);
 		ImageAdapter imageAdapter = new ImageAdapter();
 		listView.setAdapter(imageAdapter);
 	}
