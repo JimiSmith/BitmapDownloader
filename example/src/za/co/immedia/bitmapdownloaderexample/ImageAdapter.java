@@ -1,7 +1,5 @@
 package za.co.immedia.bitmapdownloaderexample;
 
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -517,8 +515,8 @@ public class ImageAdapter extends BaseAdapter {
     };
 
 	public ImageAdapter() {
-		mDownloader.setErrorDrawable(new ColorDrawable(Color.RED));
-		mDownloader.setInProgressDrawable(new ColorDrawable(Color.YELLOW));
+		mDownloader.setErrorDrawable(R.drawable.error_padded);
+		mDownloader.setInProgressDrawable(R.drawable.loading_padded);
 //	mDownloader.setAnimateImageAppearance(BitmapDownloader.AnimateAppearance.ANIMATE_ALWAYS);
 	mDownloader.setAnimateImageAppearance(BitmapDownloader.AnimateAppearance.ANIMATE_AFTER_DOWNLOAD);
 //	mDownloader.setAnimateImageAppearance(AnimateAppearance.ANIMATE_NEVER);
