@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012, James Smith
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the <organization> nor the
  *        names of its contributors may be used to endorse or promote products
  *        derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,18 +27,18 @@
 
 package za.co.immedia.bitmapdownloader;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.lang.ref.WeakReference;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.ImageView;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.lang.ref.WeakReference;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	private static final String TAG = BitmapLoaderTask.class.getCanonicalName();
@@ -55,6 +55,8 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 		public void loadBitmap(Bitmap b);
 
 		public void onLoadError();
+
+		public void onLoadCancelled();
 	}
 
 	public BitmapLoaderTask(ImageView imageView, BitmapLoadListener listener) {
@@ -86,11 +88,11 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	@Override
 	protected Bitmap doInBackground(String... params) {
 		mUrl = params[0];
+		String filename = md5(mUrl);
+		Bitmap bitmap = null;
 		if (isCancelled()) {
 			return null;
 		}
-		String filename = md5(mUrl);
-		Bitmap bitmap = null;
 		if (filename != null) {
 			try {
 				FileInputStream local = mContext.openFileInput(filename);
@@ -110,7 +112,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 
 	@Override
 	protected void onPostExecute(Bitmap bitmap) {
-		if (bitmap == null && !mError) {
+		if (bitmap == null && !mError && !isCancelled()) {
 			mListener.notFound();
 		} else {
 			if (isCancelled()) {
@@ -120,12 +122,12 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 
 			if (imageView != null && !mError) {
 
-				BitmapDownloader.Download download = (BitmapDownloader.Download) imageView.getTag(BitmapDownloader.DOWNLOAD_TAG);
-
-				if (bitmap != null && download != null && this == download.getBitmapLoaderTask()) {
+				if (bitmap != null) {
 					mListener.loadBitmap(bitmap);
-				} else {
+				} else if (!isCancelled()){
 					mListener.onLoadError();
+				} else if (isCancelled()) {
+					mListener.onLoadCancelled();
 				}
 			} else {
 				mListener.onLoadError();
