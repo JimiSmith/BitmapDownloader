@@ -324,6 +324,7 @@ public class BitmapDownloader {
 					Drawable[] layers = {current, d};
 					TransitionDrawable drawable = new TransitionDrawable(layers);
 					imageView.setImageDrawable(drawable);
+					drawable.setCrossFadeEnabled(true); //fade out the old image
 					drawable.startTransition(200);
 				} else {
 					imageView.setImageDrawable(d);
