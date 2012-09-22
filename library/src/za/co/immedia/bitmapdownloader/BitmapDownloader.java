@@ -55,6 +55,8 @@ public class BitmapDownloader {
 	private int mMaxDownloads;
 	private Drawable mErrorDrawable;
 	private Drawable mInProgressDrawable;
+	private int mErrorDrawableResource;
+	private int mInProgressDrawableResource;
 	private boolean mAnimateImageAppearance = false;
 	private boolean mAnimateImageAppearanceAfterDownload = true;
 
@@ -78,11 +80,23 @@ public class BitmapDownloader {
 	}
 
 	public void setErrorDrawable(Drawable errorDrawable) {
-		this.mErrorDrawable = errorDrawable;
+		mErrorDrawable = errorDrawable;
+		mErrorDrawableResource = -1;
 	}
 
 	public void setInProgressDrawable(Drawable inProgressDrawable) {
-		this.mInProgressDrawable = inProgressDrawable;
+		mInProgressDrawable = inProgressDrawable;
+		mInProgressDrawableResource = -1;
+	}
+
+	public void setErrorDrawable(int errorDrawable) {
+		mErrorDrawable = null;
+		mErrorDrawableResource = errorDrawable;
+	}
+
+	public void setInProgressDrawable(int inProgressDrawable) {
+		mInProgressDrawable = null;
+		mInProgressDrawableResource = inProgressDrawable;
 	}
 
 	public void setAnimateImageAppearance(AnimateAppearance animate) {
@@ -361,8 +375,8 @@ public class BitmapDownloader {
 			mRunningDownloads.remove(this);
 			ImageView imageView = mImageViewRef.get();
 			mWasDownloaded = true;
-			if (imageView != null && mErrorDrawable != null) {
-				loadDrawable(mErrorDrawable);
+			if (imageView != null) {
+				loadErrorDrawable(imageView);
 			}
 
 			if (imageView != null && this == imageView.getTag(DOWNLOAD_TAG)) {
@@ -371,6 +385,22 @@ public class BitmapDownloader {
 			if (!mQueuedDownloads.isEmpty()) {
 				Download d = mQueuedDownloads.remove(0);
 				d.doDownload();
+			}
+		}
+
+		private void loadErrorDrawable(ImageView imageView) {
+			if (mErrorDrawableResource == -1 && mErrorDrawable != null) {
+				imageView.setImageDrawable(mErrorDrawable);
+			} else if (mErrorDrawableResource != -1) {
+				imageView.setImageResource(mErrorDrawableResource);
+			}
+		}
+
+		private void loadInProgressDrawable(ImageView imageView) {
+			if (mInProgressDrawableResource == -1 && mInProgressDrawable != null) {
+				imageView.setImageDrawable(mInProgressDrawable);
+			} else if (mInProgressDrawableResource != -1) {
+				imageView.setImageResource(mInProgressDrawableResource);
 			}
 		}
 
@@ -402,9 +432,8 @@ public class BitmapDownloader {
 
 			if (imageView == null || this != imageView.getTag(DOWNLOAD_TAG)) return;
 
-			if (mInProgressDrawable != null) {
-				loadDrawable(mInProgressDrawable, false);
-			}
+			loadInProgressDrawable(imageView);
+
 			if (isAnotherQueuedOrRunningWithSameUrl()) {
 				if (mDuplicateDownloads.containsKey(mUrl)) {
 					ArrayList<Download> arr = mDuplicateDownloads.get(mUrl);
