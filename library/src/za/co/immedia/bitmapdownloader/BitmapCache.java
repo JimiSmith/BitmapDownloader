@@ -27,20 +27,22 @@
 
 package za.co.immedia.bitmapdownloader;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.support.v4.util.LruCache;
 
 /**
  * @author jimi
- *
+ * 
  */
+@SuppressLint("NewApi")
 public class BitmapCache {
 	private LruCache<String, Bitmap> mBitmapCache;
 
-//	static private final String TAG = BitmapCache.class.getCanonicalName();
+	// static private final String TAG = BitmapCache.class.getCanonicalName();
 	public BitmapCache() {
-		mBitmapCache = new LruCache<String, Bitmap> (1024 * 1024 * 3) { // by default use 3mb as a limit for the in memory Lrucache
+		mBitmapCache = new LruCache<String, Bitmap>(1024 * 1024 * 3) { // by default use 3mb as a limit for the in memory Lrucache
 			@Override
 			protected int sizeOf(String key, Bitmap bitmap) {
 				// The cache size will be measured in bytes rather than number of items.
@@ -60,6 +62,9 @@ public class BitmapCache {
 	}
 
 	public Bitmap getBitmap(String url) {
+		if (url == null) {
+			return null;
+		}
 		return mBitmapCache.get(url);
 	}
 }

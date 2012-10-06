@@ -27,6 +27,7 @@
 
 package za.co.immedia.bitmapdownloader;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
@@ -101,24 +102,24 @@ public class BitmapDownloader {
 
 	public void setAnimateImageAppearance(AnimateAppearance animate) {
 		switch (animate) {
-			case ANIMATE_ALWAYS: {
-				mAnimateImageAppearance = true;
-				mAnimateImageAppearanceAfterDownload = true;
-				break;
-			}
-			case ANIMATE_AFTER_DOWNLOAD: {
-				mAnimateImageAppearance = false;
-				mAnimateImageAppearanceAfterDownload = true;
-				break;
-			}
-			case ANIMATE_NEVER: {
-				mAnimateImageAppearance = false;
-				mAnimateImageAppearanceAfterDownload = false;
-				break;
-			}
+		case ANIMATE_ALWAYS: {
+			mAnimateImageAppearance = true;
+			mAnimateImageAppearanceAfterDownload = true;
+			break;
+		}
+		case ANIMATE_AFTER_DOWNLOAD: {
+			mAnimateImageAppearance = false;
+			mAnimateImageAppearanceAfterDownload = true;
+			break;
+		}
+		case ANIMATE_NEVER: {
+			mAnimateImageAppearance = false;
+			mAnimateImageAppearanceAfterDownload = false;
+			break;
+		}
 
-			default:
-				break;
+		default:
+			break;
 		}
 	}
 
@@ -150,7 +151,7 @@ public class BitmapDownloader {
 			this.mUrl = url;
 			this.mImageViewRef = new WeakReference<ImageView>(imageView);
 			mIsCancelled = false;
-			imageView.setImageDrawable(null);
+			// imageView.setImageDrawable(null);
 		}
 
 		public BitmapDownloaderTask getBitmapDownloaderTask() {
@@ -221,6 +222,7 @@ public class BitmapDownloader {
 			return false;
 		}
 
+		@TargetApi(11)
 		private void loadFromDisk(ImageView imageView) {
 			if (imageView != null && !mIsCancelled) {
 				mBitmapLoaderTask = new BitmapLoaderTask(imageView, this);
@@ -238,8 +240,10 @@ public class BitmapDownloader {
 			if (mQueuedDownloads.contains(this)) {
 				mQueuedDownloads.remove(this);
 			}
-			if (mBitmapDownloaderTask != null) mBitmapDownloaderTask.cancel(true);
-			if (mBitmapLoaderTask != null) mBitmapLoaderTask.cancel(true);
+			if (mBitmapDownloaderTask != null)
+				mBitmapDownloaderTask.cancel(true);
+			if (mBitmapLoaderTask != null)
+				mBitmapLoaderTask.cancel(true);
 		}
 
 		private int indexOfDownloadWithDifferentURL() {
@@ -326,10 +330,10 @@ public class BitmapDownloader {
 					if (current == null) {
 						current = new ColorDrawable(Color.TRANSPARENT);
 					}
-					Drawable[] layers = {current, d};
+					Drawable[] layers = { current, d };
 					TransitionDrawable drawable = new TransitionDrawable(layers);
 					imageView.setImageDrawable(drawable);
-					drawable.setCrossFadeEnabled(true); //fade out the old image
+					drawable.setCrossFadeEnabled(true); // fade out the old image
 					drawable.startTransition(200);
 				} else {
 					imageView.setImageDrawable(d);
@@ -422,15 +426,16 @@ public class BitmapDownloader {
 			}
 		}
 
-
 		// called if the file is not found on the file system
 		@Override
 		public void notFound() {
 			Log.d(TAG, "notFound: " + mUrl);
-			if (mIsCancelled) return;
+			if (mIsCancelled)
+				return;
 			ImageView imageView = getImageView();
 
-			if (imageView == null || this != imageView.getTag(DOWNLOAD_TAG)) return;
+			if (imageView == null || this != imageView.getTag(DOWNLOAD_TAG))
+				return;
 
 			loadInProgressDrawable(imageView);
 

@@ -88,6 +88,9 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	@Override
 	protected Bitmap doInBackground(String... params) {
 		mUrl = params[0];
+		if( mUrl == null){
+			return null;
+		}
 		String filename = md5(mUrl);
 		Bitmap bitmap = null;
 		if (isCancelled()) {
@@ -124,7 +127,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 
 				if (bitmap != null) {
 					mListener.loadBitmap(bitmap);
-				} else if (!isCancelled()){
+				} else if (!isCancelled()) {
 					mListener.onLoadError();
 				} else if (isCancelled()) {
 					mListener.onLoadCancelled();
