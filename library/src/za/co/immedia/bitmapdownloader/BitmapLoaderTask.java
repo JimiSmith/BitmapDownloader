@@ -36,9 +36,8 @@ import android.widget.ImageView;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	private static final String TAG = BitmapLoaderTask.class.getCanonicalName();
@@ -65,30 +64,38 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 		mListener = listener;
 	}
 
-	public String md5(String s) {
-		try {
-			// Create MD5 Hash
-			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-			digest.update(s.getBytes());
-			byte messageDigest[] = digest.digest();
+	/**
+	 * Conservatively estimates inSampleSize. Given a required width and height,
+	 * this method calculates an inSampleSize that will result in a bitmap that is
+	 * approximately the size requested, but guaranteed to not be smaller than what
+	 * is requested.
+	 * 
+	 * @param options the {@link BitmapFactory.Options} obtained by decoding the image with inJustDecodeBounds = true
+	 * @param reqWidth the required width
+	 * @param reqHeight the required height
+	 * 
+	 * @return the calculated inSampleSize
+	 */
+	private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+		// Raw height and width of image
+		final int height = options.outHeight;
+		final int width = options.outWidth;
+		int inSampleSize = 1;
 
-			// Create Hex String
-			StringBuilder hexString = new StringBuilder();
-			for (byte aMessageDigest : messageDigest) {
-				hexString.append(Integer.toHexString(0xFF & aMessageDigest));
+		if (height > reqHeight || width > reqWidth) {
+			if (width > height) {
+				inSampleSize = Math.round((float) height / (float) reqHeight);
+			} else {
+				inSampleSize = Math.round((float) width / (float) reqWidth);
 			}
-			return hexString.toString();
-
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
 		}
-		return null;
+		return inSampleSize;
 	}
 
 	@Override
 	protected Bitmap doInBackground(String... params) {
 		mUrl = params[0];
-		String filename = md5(mUrl);
+		String filename = Utilities.md5(mUrl);
 		Bitmap bitmap = null;
 		if (isCancelled()) {
 			return null;
@@ -96,7 +103,13 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 		if (filename != null) {
 			try {
 				FileInputStream local = mContext.openFileInput(filename);
-				bitmap = BitmapFactory.decodeStream(local);
+				final BitmapFactory.Options options = new BitmapFactory.Options();
+				options.inJustDecodeBounds = true;
+				BitmapFactory.decodeFileDescriptor(local.getFD(), null, options);
+
+				options.inSampleSize = calculateInSampleSize(options, 1024, 1024);
+				options.inJustDecodeBounds = false;
+				bitmap = BitmapFactory.decodeFileDescriptor(local.getFD(), null, options);
 				if (bitmap == null) {
 					Log.w(TAG, "The file specified is corrupt.");
 					mContext.deleteFile(filename);
@@ -104,6 +117,8 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 					throw new FileNotFoundException("The file specified is corrupt.");
 				}
 			} catch (FileNotFoundException e) {
+				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.", e);
+			} catch (IOException e) {
 				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.", e);
 			}
 		}
@@ -124,7 +139,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 
 				if (bitmap != null) {
 					mListener.loadBitmap(bitmap);
-				} else if (!isCancelled()){
+				} else if (!isCancelled()) {
 					mListener.onLoadError();
 				} else if (isCancelled()) {
 					mListener.onLoadCancelled();

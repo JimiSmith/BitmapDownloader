@@ -27,23 +27,22 @@
 
 package za.co.immedia.bitmapdownloader;
 
-import android.content.Context;
-import android.net.http.AndroidHttpClient;
-import android.os.AsyncTask;
-import android.util.Log;
-import android.widget.ImageView;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import android.content.Context;
+import android.net.http.AndroidHttpClient;
+import android.os.AsyncTask;
+import android.util.Log;
+import android.widget.ImageView;
 
 /**
  * @author James Smith
@@ -114,26 +113,6 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 		}
 	}
 
-	public String md5(String s) {
-		try {
-			// Create MD5 Hash
-			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-			digest.update(s.getBytes());
-			byte messageDigest[] = digest.digest();
-
-			// Create Hex String
-			StringBuilder hexString = new StringBuilder();
-			for (byte aMessageDigest : messageDigest) {
-				hexString.append(Integer.toHexString(0xFF & aMessageDigest));
-			}
-			return hexString.toString();
-
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
 	private int resolveUrl() {
 		HttpHead headRequest = new HttpHead(mUrl);
 		AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
@@ -158,7 +137,7 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 		if (isCancelled()) {
 			return false;
 		}
-		String filename = md5(mUrl); //get the filename before we follow any redirects. very important
+		String filename = Utilities.md5(mUrl); //get the filename before we follow any redirects. very important
 		Boolean finished = true;
 		AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
 
