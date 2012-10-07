@@ -67,12 +67,16 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	/**
 	 * Conservatively estimates inSampleSize. Given a required width and height,
 	 * this method calculates an inSampleSize that will result in a bitmap that is
-	 * approximately the size requested, but guaranteed to not be smaller than what
-	 * is requested.
+	 * approximately the size requested, but guaranteed to not be smaller than
+	 * what is requested.
 	 * 
-	 * @param options the {@link BitmapFactory.Options} obtained by decoding the image with inJustDecodeBounds = true
-	 * @param reqWidth the required width
-	 * @param reqHeight the required height
+	 * @param options
+	 *          the {@link BitmapFactory.Options} obtained by decoding the image
+	 *          with inJustDecodeBounds = true
+	 * @param reqWidth
+	 *          the required width
+	 * @param reqHeight
+	 *          the required height
 	 * 
 	 * @return the calculated inSampleSize
 	 */
@@ -95,6 +99,9 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	@Override
 	protected Bitmap doInBackground(String... params) {
 		mUrl = params[0];
+		if (mUrl == null) {
+			return null;
+		}
 		String filename = Utilities.md5(mUrl);
 		Bitmap bitmap = null;
 		if (isCancelled()) {

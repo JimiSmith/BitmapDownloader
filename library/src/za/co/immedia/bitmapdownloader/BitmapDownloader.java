@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.RejectedExecutionException;
 
+import za.co.immedia.bitmapdownloader.BitmapTransitionDrawable.BitmapTransitionCallback;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -42,9 +43,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 import android.widget.ImageView;
-
-import za.co.immedia.bitmapdownloader.BitmapTransitionDrawable;
-import za.co.immedia.bitmapdownloader.BitmapTransitionDrawable.BitmapTransitionCallback;
 
 public class BitmapDownloader {
 
@@ -68,7 +66,7 @@ public class BitmapDownloader {
 	public static enum AnimateAppearance {
 		ANIMATE_ALWAYS, ANIMATE_AFTER_DOWNLOAD, ANIMATE_NEVER
 	}
-	
+
 	public static interface BitmapLoaderCallback {
 		public void onLoaded(ImageView view);
 	}
@@ -130,7 +128,7 @@ public class BitmapDownloader {
 			break;
 		}
 	}
-	
+
 	public void setBitmapLoaderCallback(BitmapLoaderCallback callback) {
 		mCallback = callback;
 	}
