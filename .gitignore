@@ -12,3 +12,4 @@
 *.ipr
 *.classpath
 *.project
+*/local.properties
