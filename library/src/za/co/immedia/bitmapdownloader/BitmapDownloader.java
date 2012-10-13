@@ -45,6 +45,8 @@ import android.util.Log;
 import android.widget.ImageView;
 
 public class BitmapDownloader {
+	
+	private static final BitmapDownloader INSTANCE = new BitmapDownloader();
 
 	private static final String TAG = BitmapDownloader.class.getCanonicalName();
 
@@ -70,14 +72,22 @@ public class BitmapDownloader {
 	public static interface BitmapLoaderCallback {
 		public void onLoaded(ImageView view);
 	}
-
-	public BitmapDownloader() {
+	
+	private BitmapDownloader() {
 		setup(5);
 	}
 
-	public BitmapDownloader(int maxDownloads) {
-		setup(maxDownloads);
-	}
+  public static BitmapDownloader getInstance() {
+     return INSTANCE;
+  }
+
+//	public BitmapDownloader() {
+//		setup(5);
+//	}
+//
+//	public BitmapDownloader(int maxDownloads) {
+//		setup(maxDownloads);
+//	}
 
 	private void setup(int maxDownloads) {
 		mQueuedDownloads = new ArrayList<Download>();
@@ -152,8 +162,8 @@ public class BitmapDownloader {
 	public class Download implements BitmapDownloaderTask.BitmapDownloadListener, BitmapLoaderTask.BitmapLoadListener {
 		private String mUrl;
 		private WeakReference<ImageView> mImageViewRef;
-		private BitmapDownloaderTask mBitmapDownloaderTask;
-		private BitmapLoaderTask mBitmapLoaderTask;
+		private WeakReference<BitmapDownloaderTask> mBitmapDownloaderTask;
+		private WeakReference<BitmapLoaderTask> mBitmapLoaderTask;
 		private boolean mIsCancelled;
 		private boolean mWasDownloaded = false;
 
@@ -165,7 +175,7 @@ public class BitmapDownloader {
 		}
 
 		public BitmapDownloaderTask getBitmapDownloaderTask() {
-			return mBitmapDownloaderTask;
+			return mBitmapDownloaderTask.get();
 		}
 
 		public ImageView getImageView() {
@@ -209,8 +219,8 @@ public class BitmapDownloader {
 			}
 			ImageView imageView = mImageViewRef.get();
 			if (imageView != null && imageView.getTag(DOWNLOAD_TAG) == this) {
-				mBitmapDownloaderTask = new BitmapDownloaderTask(imageView, this);
-				mBitmapDownloaderTask.execute(mUrl);
+				mBitmapDownloaderTask = new WeakReference<BitmapDownloaderTask>(new BitmapDownloaderTask(imageView, this));
+				mBitmapDownloaderTask.get().execute(mUrl);
 				Log.d(TAG, "doDownload: " + mUrl);
 				mRunningDownloads.add(this);
 			}
@@ -236,12 +246,12 @@ public class BitmapDownloader {
 		@SuppressLint("NewApi")
 		private void loadFromDisk(ImageView imageView) {
 			if (imageView != null && !mIsCancelled) {
-				mBitmapLoaderTask = new BitmapLoaderTask(imageView, this);
+				mBitmapLoaderTask = new WeakReference<BitmapLoaderTask>(new BitmapLoaderTask(imageView, this));
 				try {
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-						mBitmapLoaderTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mUrl);
+						mBitmapLoaderTask.get().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, mUrl);
 					} else {
-						mBitmapLoaderTask.execute(mUrl);
+						mBitmapLoaderTask.get().execute(mUrl);
 					}
 				} catch (RejectedExecutionException e) {
 				}
@@ -254,8 +264,10 @@ public class BitmapDownloader {
 			if (mQueuedDownloads.contains(this)) {
 				mQueuedDownloads.remove(this);
 			}
-			if (mBitmapDownloaderTask != null) mBitmapDownloaderTask.cancel(true);
-			if (mBitmapLoaderTask != null) mBitmapLoaderTask.cancel(true);
+			final BitmapDownloaderTask bitmapDownloaderTask = mBitmapDownloaderTask.get();
+			if (bitmapDownloaderTask != null) bitmapDownloaderTask.cancel(true);
+			final BitmapLoaderTask bitmapLoaderTask = mBitmapLoaderTask.get();
+			if (bitmapLoaderTask != null) bitmapLoaderTask.cancel(true);
 		}
 
 		private int indexOfDownloadWithDifferentURL() {
@@ -395,7 +407,7 @@ public class BitmapDownloader {
 				for (Download dup : duplicates) {
 					Log.d(TAG, "onComplete: " + dup.mUrl);
 					// load the image.
-					if (dup.getImageView().getTag(DOWNLOAD_TAG) == dup) {
+					if (dup.getImageView() != null && dup.getImageView().getTag(DOWNLOAD_TAG) == dup) {
 						dup.loadFromDisk(dup.getImageView());
 					}
 				}
