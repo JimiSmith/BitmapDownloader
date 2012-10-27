@@ -39,7 +39,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
-public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
+public class BitmapLoaderTask extends AsyncTask<String, Void, Boolean> {
 	private static final String TAG = BitmapLoaderTask.class.getCanonicalName();
 
 	private WeakReference<ImageView> imageViewReference;
@@ -47,6 +47,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 	private BitmapLoadListener mListener;
 	public String mUrl;
 	private boolean mError;
+	private Bitmap result;
 
 	public interface BitmapLoadListener {
 		public void notFound();
@@ -87,24 +88,27 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 		int inSampleSize = 1;
 
 		if (height > reqHeight || width > reqWidth) {
-			if (width > height) {
+			if (width < height) {
 				inSampleSize = Math.round((float) height / (float) reqHeight);
 			} else {
 				inSampleSize = Math.round((float) width / (float) reqWidth);
 			}
 		}
+		Log.d(TAG, "inSampleSize: " + inSampleSize);
 		return inSampleSize;
 	}
 
 	@Override
-	protected Bitmap doInBackground(String... params) {
+	protected Boolean doInBackground(String... params) {
 		mUrl = params[0];
 		if (mUrl == null) {
+			mContext = null;
 			return null;
 		}
 		String filename = Utilities.md5(mUrl);
-		Bitmap bitmap = null;
+		result = null;
 		if (isCancelled()) {
+			mContext = null;
 			return null;
 		}
 		if (filename != null) {
@@ -116,8 +120,8 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 
 				options.inSampleSize = calculateInSampleSize(options, 1024, 1024);
 				options.inJustDecodeBounds = false;
-				bitmap = BitmapFactory.decodeFileDescriptor(local.getFD(), null, options);
-				if (bitmap == null) {
+				result = BitmapFactory.decodeFileDescriptor(local.getFD(), null, options);
+				if (result == null) {
 					Log.w(TAG, "The file specified is corrupt.");
 					mContext.deleteFile(filename);
 					mError = true;
@@ -129,23 +133,24 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.", e);
 			}
 		}
-		return bitmap;
+		return result != null;
 	}
 
 	@Override
-	protected void onPostExecute(Bitmap bitmap) {
-		if (bitmap == null && !mError && !isCancelled()) {
+	protected void onPostExecute(Boolean finished) {
+		mContext = null;
+		if (!finished && !mError && !isCancelled()) {
 			mListener.notFound();
 		} else {
 			if (isCancelled()) {
-				bitmap = null;
+				result = null;
 			}
 			ImageView imageView = imageViewReference.get();
 
 			if (imageView != null && !mError) {
 
-				if (bitmap != null) {
-					mListener.loadBitmap(bitmap);
+				if (finished && result != null) {
+					mListener.loadBitmap(result);
 				} else if (!isCancelled()) {
 					mListener.onLoadError();
 				} else if (isCancelled()) {
@@ -155,5 +160,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Bitmap> {
 				mListener.onLoadError();
 			}
 		}
+		result = null;
+		imageViewReference.clear();
 	}
 }

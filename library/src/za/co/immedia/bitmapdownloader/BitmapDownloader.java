@@ -219,7 +219,7 @@ public class BitmapDownloader {
 			}
 			ImageView imageView = mImageViewRef.get();
 			if (imageView != null && imageView.getTag(DOWNLOAD_TAG) == this) {
-				mBitmapDownloaderTask = new WeakReference<BitmapDownloaderTask>(new BitmapDownloaderTask(imageView, this));
+				mBitmapDownloaderTask = new WeakReference<BitmapDownloaderTask>(new BitmapDownloaderTask(imageView.getContext(), this));
 				mBitmapDownloaderTask.get().execute(mUrl);
 				Log.d(TAG, "doDownload: " + mUrl);
 				mRunningDownloads.add(this);
@@ -264,10 +264,14 @@ public class BitmapDownloader {
 			if (mQueuedDownloads.contains(this)) {
 				mQueuedDownloads.remove(this);
 			}
-			final BitmapDownloaderTask bitmapDownloaderTask = mBitmapDownloaderTask.get();
-			if (bitmapDownloaderTask != null) bitmapDownloaderTask.cancel(true);
-			final BitmapLoaderTask bitmapLoaderTask = mBitmapLoaderTask.get();
-			if (bitmapLoaderTask != null) bitmapLoaderTask.cancel(true);
+			if (mBitmapDownloaderTask != null) {
+				final BitmapDownloaderTask bitmapDownloaderTask = mBitmapDownloaderTask.get();
+				if (bitmapDownloaderTask != null) bitmapDownloaderTask.cancel(true);
+			}
+			if (mBitmapLoaderTask != null) {
+				final BitmapLoaderTask bitmapLoaderTask = mBitmapLoaderTask.get();
+				if (bitmapLoaderTask != null) bitmapLoaderTask.cancel(true);
+			}
 		}
 
 		private int indexOfDownloadWithDifferentURL() {
@@ -537,6 +541,8 @@ public class BitmapDownloader {
 				imageView.setTag(DOWNLOAD_TAG, null);
 			}
 			mWasDownloaded = false;
+			if (mBitmapDownloaderTask != null) mBitmapDownloaderTask.clear();
+			if (mBitmapLoaderTask != null) mBitmapLoaderTask.clear();
 		}
 
 		@Override
@@ -546,6 +552,8 @@ public class BitmapDownloader {
 			if (imageView != null && this == imageView.getTag(DOWNLOAD_TAG)) {
 				imageView.setTag(DOWNLOAD_TAG, null);
 			}
+			if (mBitmapDownloaderTask != null) mBitmapDownloaderTask.clear();
+			if (mBitmapLoaderTask != null) mBitmapLoaderTask.clear();
 		}
 
 		@Override
@@ -555,6 +563,8 @@ public class BitmapDownloader {
 			if (imageView != null && this == imageView.getTag(DOWNLOAD_TAG)) {
 				imageView.setTag(DOWNLOAD_TAG, null);
 			}
+			if (mBitmapDownloaderTask != null) mBitmapDownloaderTask.clear();
+			if (mBitmapLoaderTask != null) mBitmapLoaderTask.clear();
 		}
 	}
 

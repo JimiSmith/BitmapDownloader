@@ -34,14 +34,16 @@ import android.support.v4.util.LruCache;
 
 /**
  * @author jimi
- *
+ * 
  */
 public class BitmapCache {
 	private LruCache<String, Bitmap> mBitmapCache;
 
-	// static private final String TAG = BitmapCache.class.getCanonicalName();
+//	static private final String TAG = BitmapCache.class.getCanonicalName();
+
 	public BitmapCache() {
-		mBitmapCache = new LruCache<String, Bitmap>(1024 * 1024 * 3) { // by default use 3mb as a limit for the in memory Lrucache
+		// by default use 3mb as a limit for the in memory Lrucache
+		mBitmapCache = new LruCache<String, Bitmap>(1024 * 1024 * 4) {
 			@SuppressLint("NewApi")
 			@Override
 			protected int sizeOf(String key, Bitmap bitmap) {
@@ -54,11 +56,16 @@ public class BitmapCache {
 				}
 				return byteCount;
 			}
+			
 		};
 	}
 
 	public void addBitmap(String url, Bitmap b) {
-		mBitmapCache.put(url, b);
+		synchronized (mBitmapCache) {
+			if (mBitmapCache.get(url) == null) {
+				mBitmapCache.put(url, b);
+			}
+		}
 	}
 
 	public Bitmap getBitmap(String url) {
@@ -66,5 +73,9 @@ public class BitmapCache {
 			return null;
 		}
 		return mBitmapCache.get(url);
+	}
+	
+	public void clearCache() {
+		mBitmapCache.evictAll();
 	}
 }

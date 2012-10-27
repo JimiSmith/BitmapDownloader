@@ -42,7 +42,6 @@ import android.content.Context;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.ImageView;
 
 /**
  * @author James Smith
@@ -51,7 +50,7 @@ import android.widget.ImageView;
 public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 	private static final String TAG = BitmapDownloaderTask.class.getCanonicalName();
 	public String mUrl;
-	private final Context mContext;
+	private Context mContext;
 	private final BitmapDownloadListener mListener;
 	private HttpGet mGetRequest;
 
@@ -63,8 +62,8 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 		public void onCancel();
 	}
 
-	public BitmapDownloaderTask(ImageView imageView, BitmapDownloadListener listener) {
-		mContext = imageView.getContext().getApplicationContext();
+	public BitmapDownloaderTask(Context context, BitmapDownloadListener listener) {
+		mContext = context;
 		mListener = listener;
 	}
 
@@ -88,6 +87,7 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 
 	@Override
 	protected void onCancelled(Boolean done) {
+		mContext = null;
 		Log.w(TAG, "onCancelled(Boolean):  " + done);
 		mListener.onCancel();
 		//if the task is cancelled, abort the image request
@@ -101,6 +101,7 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 	@Override
 	// Once the image is downloaded, associates it to the imageView
 	protected void onPostExecute(Boolean done) {
+		mContext = null;
 		if (isCancelled()) {
 			done = false;
 		}
