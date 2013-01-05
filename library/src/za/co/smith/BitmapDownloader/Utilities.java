@@ -1,4 +1,4 @@
-package za.co.immedia.bitmapdownloader;
+package za.co.smith.BitmapDownloader;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

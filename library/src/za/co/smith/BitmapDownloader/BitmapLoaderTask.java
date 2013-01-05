@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package za.co.immedia.bitmapdownloader;
+package za.co.smith.BitmapDownloader;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -48,19 +48,19 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Boolean> {
 	public String mUrl;
 	private boolean mError;
 	private Bitmap result;
+    private BitmapDownloader.Options mOptions;
 
-	public interface BitmapLoadListener {
+    public interface BitmapLoadListener {
 		public void notFound();
 
 		public void loadBitmap(Bitmap b);
 
-		public void onLoadError();
-
-		public void onLoadCancelled();
+		public void loadError();
 	}
 
-	public BitmapLoaderTask(ImageView imageView, BitmapLoadListener listener) {
-		imageViewReference = new WeakReference<ImageView>(imageView);
+	public BitmapLoaderTask(ImageView imageView, BitmapDownloader.Options options, BitmapLoadListener listener) {
+        mOptions = options;
+        imageViewReference = new WeakReference<ImageView>(imageView);
 		mContext = imageView.getContext().getApplicationContext();
 		mListener = listener;
 	}
@@ -118,7 +118,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Boolean> {
 				options.inJustDecodeBounds = true;
 				BitmapFactory.decodeFileDescriptor(local.getFD(), null, options);
 
-				options.inSampleSize = calculateInSampleSize(options, 1024, 1024);
+				options.inSampleSize = calculateInSampleSize(options, mOptions.getMaxWidth(), mOptions.getMaxHeight());
 				options.inJustDecodeBounds = false;
 				result = BitmapFactory.decodeFileDescriptor(local.getFD(), null, options);
 				if (result == null) {
@@ -128,7 +128,7 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Boolean> {
 					throw new FileNotFoundException("The file specified is corrupt.");
 				}
 			} catch (FileNotFoundException e) {
-				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.", e);
+				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.");
 			} catch (IOException e) {
 				Log.w(TAG, "Bitmap is not cached on disk. Redownloading.", e);
 			}
@@ -152,12 +152,10 @@ public class BitmapLoaderTask extends AsyncTask<String, Void, Boolean> {
 				if (finished && result != null) {
 					mListener.loadBitmap(result);
 				} else if (!isCancelled()) {
-					mListener.onLoadError();
-				} else if (isCancelled()) {
-					mListener.onLoadCancelled();
+					mListener.loadError();
 				}
 			} else {
-				mListener.onLoadError();
+				mListener.loadError();
 			}
 		}
 		result = null;

@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package za.co.immedia.bitmapdownloader;
+package za.co.smith.BitmapDownloader;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -37,13 +37,12 @@ import android.support.v4.util.LruCache;
  * 
  */
 public class BitmapCache {
-	private LruCache<String, Bitmap> mBitmapCache;
+	private final LruCache<String, Bitmap> mBitmapCache;
 
 //	static private final String TAG = BitmapCache.class.getCanonicalName();
 
-	public BitmapCache() {
-		// by default use 3mb as a limit for the in memory Lrucache
-		mBitmapCache = new LruCache<String, Bitmap>(1024 * 1024 * 4) {
+	public BitmapCache(int size) {
+		mBitmapCache = new LruCache<String, Bitmap>(size) {
 			@SuppressLint("NewApi")
 			@Override
 			protected int sizeOf(String key, Bitmap bitmap) {

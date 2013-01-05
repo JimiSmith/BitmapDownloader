@@ -1,19 +1,18 @@
-package za.co.immedia.bitmapdownloaderexample;
+package za.co.smith.bitmapdownloaderexamplev2;
 
+import za.co.smith.BitmapDownloader.BitmapDownloader;
+import za.co.smith.BitmapDownloader.BitmapDownloader.Options;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import za.co.immedia.bitmapdownloader.BitmapDownloader;
 
 public class ImageAdapter extends BaseAdapter {
 
-	BitmapDownloader mDownloader = new BitmapDownloader(5);
-
 	private static final String[] URLS = {
-			"http://lh3.googleusercontent.com/-SJHKAxJJdPE/SzR94FrCFrI/AAAAAAAAAH4/25qv_gub0h8/s144/puppy-and-kitten.jpg",
 			"http://lh3.googleusercontent.com/-4908O4TWcw4/SXo5Juk-3XI/AAAAAAAAEB0/7VIufZelxfU/s144/puppys%252520091.JPG",
+			"http://lh3.googleusercontent.com/-SJHKAxJJdPE/SzR94FrCFrI/AAAAAAAAAH4/25qv_gub0h8/s144/puppy-and-kitten.jpg",
 			"http://lh5.googleusercontent.com/-muOlmYsUWYw/TdCdDLooVVI/AAAAAAAABxo/7G5Nl7KLK7M/s144/02%252520Blonde%252520Girl%252520%252528Portrait%252529.jpg",
 			"http://lh6.googleusercontent.com/-rIGdtOeBlUQ/R_KIB7hEl1I/AAAAAAAAAS0/XzE5iiI9Boc/s144/puppy.jpg",
 			"http://lh6.googleusercontent.com/-c57wYlVK6Ik/Swe8wVlx4qI/AAAAAAAABrU/Vgs_qusb_oA/s144/beagle-puppy.jpg",
@@ -515,11 +514,9 @@ public class ImageAdapter extends BaseAdapter {
     };
 
 	public ImageAdapter() {
-		mDownloader.setErrorDrawable(R.drawable.error_padded);
-		mDownloader.setInProgressDrawable(R.drawable.loading_padded);
-//	mDownloader.setAnimateImageAppearance(BitmapDownloader.AnimateAppearance.ANIMATE_ALWAYS);
-	mDownloader.setAnimateImageAppearance(BitmapDownloader.AnimateAppearance.ANIMATE_AFTER_DOWNLOAD);
-//	mDownloader.setAnimateImageAppearance(AnimateAppearance.ANIMATE_NEVER);
+		BitmapDownloader.getInstance().setDefaultOptions(new Options()
+		.setErrorResource(R.drawable.error_padded)
+		.setPlaceholderResource(R.drawable.loading_padded));
 	}
 
 	@Override
@@ -547,7 +544,7 @@ public class ImageAdapter extends BaseAdapter {
 
 		imageView = (ImageView) convertView.findViewById(R.id.imageView);
 
-		mDownloader.download(URLS[position], imageView);
+        BitmapDownloader.getInstance().download(URLS[position], imageView);
 
 		return convertView;
 	}

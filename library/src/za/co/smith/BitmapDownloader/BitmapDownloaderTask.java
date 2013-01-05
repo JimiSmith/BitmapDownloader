@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package za.co.immedia.bitmapdownloader;
+package za.co.smith.BitmapDownloader;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -38,6 +38,8 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 
+import za.co.smith.BitmapDownloader.Manager.Download;
+
 import android.content.Context;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
@@ -47,8 +49,9 @@ import android.util.Log;
  * @author James Smith
  */
 
-public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
+public class BitmapDownloaderTask extends AsyncTask<Download, Void, Boolean> {
 	private static final String TAG = BitmapDownloaderTask.class.getCanonicalName();
+	public Download mDownload;
 	public String mUrl;
 	private Context mContext;
 	private final BitmapDownloadListener mListener;
@@ -58,18 +61,17 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 		public void onComplete();
 
 		public void onError();
-
-		public void onCancel();
 	}
 
-	public BitmapDownloaderTask(Context context, BitmapDownloadListener listener) {
-		mContext = context;
+	public BitmapDownloaderTask(BitmapDownloadListener listener) {
 		mListener = listener;
 	}
 
 	@Override
-	protected Boolean doInBackground(String... params) {
-		mUrl = params[0];
+	protected Boolean doInBackground(Download... params) {
+		mDownload = params[0];
+		mUrl = mDownload.url.toString();
+		mContext = mDownload.context;
 		Boolean finished = false;
 		try {
 			finished = downloadBitmap();
@@ -89,23 +91,20 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 	protected void onCancelled(Boolean done) {
 		mContext = null;
 		Log.w(TAG, "onCancelled(Boolean):  " + done);
-		mListener.onCancel();
 		//if the task is cancelled, abort the image request
 		if (mGetRequest != null) {
-			Log.w(TAG, "Aborting get request for:  " + mUrl);
+			Log.w(TAG, "Aborting get request for:  " + mDownload);
 			mGetRequest.abort();
 			mGetRequest = null;
 		}
 	}
 
 	@Override
-	// Once the image is downloaded, associates it to the imageView
 	protected void onPostExecute(Boolean done) {
 		mContext = null;
 		if (isCancelled()) {
 			done = false;
 		}
-		Log.w(TAG, "onPostExecute:  " + done);
 
 		if (done) {
 			mListener.onComplete();
@@ -138,7 +137,7 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 		if (isCancelled()) {
 			return false;
 		}
-		String filename = Utilities.md5(mUrl); //get the filename before we follow any redirects. very important
+		String filename = mDownload.urlHash; //get the filename before we follow any redirects. very important
 		Boolean finished = true;
 		AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
 
@@ -197,15 +196,15 @@ public class BitmapDownloaderTask extends AsyncTask<String, Void, Boolean> {
 			}
 		} catch (IllegalArgumentException e) {
 			finished = false;
-			Log.w(TAG, "Error while retrieving bitmap from " + mUrl, e);
+			Log.w(TAG, "Error while retrieving bitmap from " + mDownload, e);
 		} catch (FileNotFoundException e) {
 			mGetRequest.abort();
 			finished = false;
-			Log.w(TAG, "Error while retrieving bitmap from " + mUrl, e);
+			Log.w(TAG, "Error while retrieving bitmap from " + mDownload, e);
 		} catch (IOException e) {
 			mGetRequest.abort();
 			finished = false;
-			Log.w(TAG, "Error while retrieving bitmap from " + mUrl, e);
+			Log.w(TAG, "Error while retrieving bitmap from " + mDownload, e);
 		} finally {
 			mGetRequest = null;
 			client.close();

@@ -1,4 +1,4 @@
-package za.co.immedia.bitmapdownloaderexample;
+package za.co.smith.bitmapdownloaderexamplev2;
 
 import android.app.Activity;
 import android.os.Bundle;
