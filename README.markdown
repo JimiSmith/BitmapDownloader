@@ -9,10 +9,10 @@ If multiple imageviews are specified with the same URL, then the image will only
 
 Example
 -------
-	BitmapDownloader bm = new BitmapDownloader(5); //where 5 is the number of concurrent downloads permitted
-	bm.setErrorDrawable(new ColorDrawable(Color.RED));
-	bm.setInProgressDrawable(new ColorDrawable(Color.YELLOW));
-	bm.download(url,imageView);
+	BitmapDownloader.getInstance().setDefaultOptions(new Options()
+		.setErrorResource(R.drawable.error_padded)
+		.setPlaceholderResource(R.drawable.loading_padded));
+	BitmapDownloader.getInstance().download(url,imageView);
 
 License
 -------
