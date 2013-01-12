@@ -34,47 +34,46 @@ import android.support.v4.util.LruCache;
 
 /**
  * @author jimi
- * 
  */
 public class BitmapCache {
-	private final LruCache<String, Bitmap> mBitmapCache;
+    private final LruCache<String, Bitmap> mBitmapCache;
 
 //	static private final String TAG = BitmapCache.class.getCanonicalName();
 
-	public BitmapCache(int size) {
-		mBitmapCache = new LruCache<String, Bitmap>(size) {
-			@SuppressLint("NewApi")
-			@Override
-			protected int sizeOf(String key, Bitmap bitmap) {
-				// The cache size will be measured in bytes rather than number of items.
-				int byteCount = 0;
-				if (Build.VERSION.SDK_INT < 12) {
-					byteCount = bitmap.getRowBytes() * bitmap.getHeight();
-				} else {
-					byteCount = bitmap.getByteCount();
-				}
-				return byteCount;
-			}
-			
-		};
-	}
+    public BitmapCache(int size) {
+        mBitmapCache = new LruCache<String, Bitmap>(size) {
+            @SuppressLint("NewApi")
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
+                // The cache size will be measured in bytes rather than number of items.
+                int byteCount = 0;
+                if (Build.VERSION.SDK_INT < 12) {
+                    byteCount = bitmap.getRowBytes() * bitmap.getHeight();
+                } else {
+                    byteCount = bitmap.getByteCount();
+                }
+                return byteCount;
+            }
 
-	public void addBitmap(String url, Bitmap b) {
-		synchronized (mBitmapCache) {
-			if (mBitmapCache.get(url) == null) {
-				mBitmapCache.put(url, b);
-			}
-		}
-	}
+        };
+    }
 
-	public Bitmap getBitmap(String url) {
-		if (url == null) {
-			return null;
-		}
-		return mBitmapCache.get(url);
-	}
-	
-	public void clearCache() {
-		mBitmapCache.evictAll();
-	}
+    public void addBitmap(String url, Bitmap b) {
+        synchronized (mBitmapCache) {
+            if (mBitmapCache.get(url) == null) {
+                mBitmapCache.put(url, b);
+            }
+        }
+    }
+
+    public Bitmap getBitmap(String url) {
+        if (url == null) {
+            return null;
+        }
+        return mBitmapCache.get(url);
+    }
+
+    public void clearCache() {
+        mBitmapCache.evictAll();
+    }
 }

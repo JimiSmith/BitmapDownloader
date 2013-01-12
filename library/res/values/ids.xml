@@ -27,6 +27,6 @@
 
 <resources>
 
-	<item name="bmd__image_downloader" type="id"/>
+    <item name="bmd__image_downloader" type="id"/>
 
 </resources>

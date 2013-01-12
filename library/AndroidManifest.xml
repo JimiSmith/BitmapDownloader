@@ -1,13 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="za.co.smith.bitmapdownloader"
-	android:versionCode="1"
-	android:versionName="1.0" >
+          package="za.co.smith.bitmapdownloader"
+          android:versionCode="1"
+          android:versionName="1.0">
 
-	<uses-sdk
-		android:minSdkVersion="8"
-		android:targetSdkVersion="16" />
+    <uses-sdk
+            android:minSdkVersion="8"
+            android:targetSdkVersion="16"/>
 
-	<application android:allowBackup="true" >
-	</application>
+    <application android:allowBackup="true">
+    </application>
 
 </manifest>

@@ -150,6 +150,7 @@ public class BitmapDownloader implements ManagerDelegate {
     @Override
     public void downloadComplete(final String url) {
         ArrayList<WeakReference<ImageView>> imageViewRefs = mDownloads.get(url);
+        mDownloads.remove(url);
         if (imageViewRefs != null) {
             for (WeakReference<ImageView> imageViewRef : imageViewRefs) {
 
@@ -161,7 +162,6 @@ public class BitmapDownloader implements ManagerDelegate {
                 }
             }
         }
-        mDownloads.remove(url);
     }
 
     @Override
@@ -205,8 +205,9 @@ public class BitmapDownloader implements ManagerDelegate {
                     imageViewRefs = new ArrayList<WeakReference<ImageView>>();
                 }
                 imageViewRefs.add(new WeakReference<ImageView>(imageView));
-                mDownloads.put(url, imageViewRefs);
-                mManager.addDownload(url, imageView.getContext());
+                if (mDownloads.put(url, imageViewRefs) == null) {
+                    mManager.addDownload(url, imageView.getContext());
+                }
             }
 
             @Override
